@@ -299,10 +299,10 @@
             <div class="glass-card w-full bg-rose-950/50 border-rose-500/50 relative overflow-hidden mb-8 py-10">
                 <i class="fa-solid fa-triangle-exclamation text-6xl text-rose-500 mb-4 animate-pulse"></i>
                 <p class="text-rose-200 font-bold uppercase tracking-widest text-sm mb-1">👑 អ្នកបន្លំគឺ៖</p>
-                <h2 id="off-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-2">ឈ្មោះ</h2><p class="text-rose-200 text-sm">Randomly selected imposter</p>
+                <h2 id="off-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-2">ឈ្មោះ</h2><p class="text-rose-200 text-sm">ឈ្មោះអ្នកបន្លំ</p>
                 
                 <div class="bg-black/40 p-4 rounded-xl border border-white/10 inline-block">
-                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យពិតប្រាកដគឺ៖</p>
+                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យសម្ងាត់គឺ៖</p>
                     <p id="off-res-word" class="text-2xl font-bold text-emerald-400">ពាក្យ</p>
                 </div>
             </div>
@@ -428,10 +428,10 @@
             <div class="glass-card w-full bg-rose-950/50 border-rose-500/50 relative overflow-hidden mb-8 py-10">
                 <i class="fa-solid fa-skull text-6xl text-rose-500 mb-4 drop-shadow-[0_0_15px_rgba(225,29,72,0.8)]"></i>
                 <p class="text-rose-200 font-bold uppercase tracking-widest text-sm mb-1">👑 អ្នកបន្លំគឺ៖</p>
-                <h2 id="on-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-2">ឈ្មោះ</h2><p class="text-rose-200 text-sm">Randomly selected imposter</p>
+                <h2 id="on-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-2">ឈ្មោះ</h2><p class="text-rose-200 text-sm">ឈ្មោះអ្នកបន្លំ</p>
                 
                 <div class="bg-black/40 p-4 rounded-xl border border-white/10 inline-block">
-                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យពិតប្រាកដគឺ៖</p>
+                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យសម្ងាត់គឺ៖</p>
                     <p id="on-res-word" class="text-2xl font-bold text-emerald-400">ពាក្យ</p>
                 </div>
             </div>
@@ -541,6 +541,15 @@
             });
         };
 
+
+        const pickRandomIndex = (length) => {
+            if(!length) return 0;
+            if(window.crypto && crypto.getRandomValues) {
+                return crypto.getRandomValues(new Uint32Array(1))[0] % length;
+            }
+            return Math.floor(Math.random() * length);
+        };
+
         const getAllCategories = () => {
             // Merge defaults with custom DB categories
             let merged = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
@@ -557,6 +566,7 @@
                 $(viewId).classList.add('active');
                 if(viewId === 'view-offline-setup') app.offline.renderSetup();
                 if(viewId === 'view-settings') app.settings.render();
+                if(viewId === 'view-offline-result') app.offline.setupResult();
             },
 
             init: () => {
@@ -689,12 +699,13 @@
                     const wordList = Object.values(category.words);
                     if(wordList.length === 0) return toast("ប្រធានបទនេះគ្មានពាក្យទេ!");
 
-                    const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
-                    const randomImpostor = crypto.getRandomValues(new Uint32Array(1))[0] % state.offPlayers.length;
+                    const randomWord = wordList[pickRandomIndex(wordList.length)];
+                    const randomImpostor = pickRandomIndex(state.offPlayers.length);
 
                     state.offGameData = {
                         word: randomWord,
                         imposterIndex: randomImpostor,
+                        imposterName: state.offPlayers[randomImpostor],
                         categoryKey: catKey,
                         categoryName: category.name,
                         allWords: wordList
@@ -763,6 +774,14 @@
                     $('off-discuss-cat-name').innerText = '';
                     $('off-discuss-word-list').innerHTML = '';
                     app.nav('view-offline-discuss');
+                },
+                setupResult: () => {
+                    const game = state.offGameData || {};
+                    const imposterName = game.imposterName || state.offPlayers?.[game.imposterIndex] || "មិនស្គាល់";
+                    const secretWord = game.word || "មិនស្គាល់";
+
+                    $('off-res-imposter').innerText = imposterName;
+                    $('off-res-word').innerText = secretWord;
                 }
             },
 
@@ -894,14 +913,15 @@
                     const category = getAllCategories()[catKey];
                     const wordList = Object.values(category.words);
                     
-                    const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
-                    const randomImposterUid = playerUids[crypto.getRandomValues(new Uint32Array(1))[0] % playerUids.length];
+                    const randomWord = wordList[pickRandomIndex(wordList.length)];
+                    const randomImposterUid = playerUids[pickRandomIndex(playerUids.length)];
 
                     update(ref(db, `imposterRooms/${state.roomCode}`), {
                         state: 'playing',
                         game: {
                             word: randomWord,
                             imposterUid: randomImposterUid,
+                            imposterName: state.roomData.players[randomImposterUid]?.name || "មិនស្គាល់",
                             categoryKey: catKey,
                             categoryName: category.name,
                             allWords: wordList
@@ -979,11 +999,13 @@
                 },
                 setupResult: () => {
                     app.nav('view-online-result');
-                    const game = state.roomData.game;
-                    const impostorName = state.roomData.players[game.imposterUid].name;
+                    const game = state.roomData?.game || {};
+                    const players = state.roomData?.players || {};
+                    const impostorName = players[game.imposterUid]?.name || game.imposterName || "មិនស្គាល់";
+                    const secretWord = game.word || "មិនស្គាល់";
                     
                     $('on-res-imposter').innerText = impostorName;
-                    $('on-res-word').innerText = game.word;
+                    $('on-res-word').innerText = secretWord;
 
                     if(state.isHost) {
                         $('on-host-end-controls').classList.remove('hidden');
