@@ -339,9 +339,9 @@
 
         // Configuration
         const config = {
-            maxTroops: 120,
-            productionRate: 1500, // Sync loop intervals
-            troopSpeed: 190,
+            maxTroops: 150,
+            productionRate: 1000, // Sync loop intervals (Faster generation)
+            troopSpeed: 240, // Faster, snappier movement for PvP
             troopSize: 5.5,
             colors: {
                 neutral: { fill: ['#334155', '#1e293b'], stroke: '#475569', text: '#f8fafc', shadow: '#0f172a', troop: '#64748b' },
@@ -517,13 +517,13 @@
                 const area = Math.abs(d3.polygonArea(polygon));
                 
                 // Slight organic contraction creates beautiful rivers and channel spaces
-                const shrinkFactor = 0.92;
+                const shrinkFactor = 0.85; // Increased gap for better visual map definition
                 const shrunkPolygon = polygon.map(p => [
                     centroid[0] + (p[0] - centroid[0]) * shrinkFactor,
                     centroid[1] + (p[1] - centroid[1]) * shrinkFactor
                 ]);
 
-                const capacity = Math.max(30, Math.min(config.maxTroops, Math.floor(area / 1250)));
+                const capacity = Math.max(40, Math.min(config.maxTroops, Math.floor(area / 1100)));
 
                 regions.push({
                     id: allPoints[i].id,
@@ -680,16 +680,12 @@
             // Initialize 25 region setups
             buildMapSkeleton();
             const regionsData = regions.map(r => {
-                // Settle some base default owners
-                let owner = 'neutral';
-                let troops = Math.floor(Math.random() * 15) + 10;
-                if (r.id === 'PP') { owner = 'player'; troops = 65; }
-                else if (r.id === 'RT') { owner = 'ai1'; troops = 50; }
-                else if (r.id === 'OM') { owner = 'ai2'; troops = 50; }
-                else if (r.id === 'KK') { owner = 'ai3'; troops = 50; }
-                else if (r.id === 'SV') { owner = 'ai4'; troops = 50; }
-
-                return { id: r.id, owner, troops };
+                // All regions start entirely neutral for PvP
+                return { 
+                    id: r.id, 
+                    owner: 'neutral', 
+                    troops: Math.floor(Math.random() * 15) + 15 
+                };
             });
 
             const initialRoom = {
@@ -856,8 +852,24 @@
         async function triggerStartGame() {
             playSound('conquer');
             if (!isHost || !roomCode) return;
+            
+            // Assign starting regions strictly to the active humans in the room
+            const activePlayers = Object.values(roomData.players);
+            const startProvinceIds = ['PP', 'RT', 'OM', 'KK', 'SV']; // Distinct corners/centers
+            let updatedRegions = [...roomData.regions];
+            
+            activePlayers.forEach((p, index) => {
+                let targetId = startProvinceIds[index % startProvinceIds.length];
+                let regIndex = updatedRegions.findIndex(r => r.id === targetId);
+                if (regIndex !== -1) {
+                    updatedRegions[regIndex].owner = p.faction;
+                    updatedRegions[regIndex].troops = 75; // Strong starting force
+                }
+            });
+
             const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
             await window.fbImports.updateDoc(docRef, {
+                regions: updatedRegions,
                 state: 'playing',
                 lastUpdated: Date.now()
             });
@@ -1021,36 +1033,7 @@
                 }
             }
 
-            // 3. AI Controller (Triggered only on the Host client for sync consistency)
-            if (isHost && roomData) {
-                // Determine vacant slots currently run as active local bots
-                const activePlayerFactions = Object.values(roomData.players).map(p => p.faction);
-                const botFactions = ['ai1', 'ai2', 'ai3', 'ai4'].filter(f => !activePlayerFactions.includes(f));
-
-                regions.forEach(r => {
-                    if (botFactions.includes(r.owner)) {
-                        if (Math.random() < 0.006) {
-                            if (r.troops > r.capacity * 0.55 && r.dispatchQueue.length === 0) {
-                                let targets = regions.filter(t => t.id !== r.id);
-                                targets.sort((a, b) => {
-                                    let distA = Math.hypot(a.x - r.x, a.y - r.y);
-                                    let distB = Math.hypot(b.x - r.x, b.y - r.y);
-                                    let scoreA = distA + (a.owner === r.owner ? 6000 : (a.owner === 'neutral' ? a.troops * 4 : a.troops * 12));
-                                    let scoreB = distB + (b.owner === r.owner ? 6000 : (b.owner === 'neutral' ? b.troops * 4 : b.troops * 12));
-                                    return scoreA - scoreB;
-                                });
-
-                                if (targets.length > 0 && targets[0].owner !== r.owner) {
-                                    // Host triggers attack sequence and broadcasts to state database
-                                    executeAttack(r, targets[0]);
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // 4. Strategic Synchronization / Host Verification Authority Loop
+            // 3. Strategic Synchronization / Host Verification Authority Loop
             if (time - lastSyncTime > config.productionRate) {
                 lastSyncTime = time;
                 if (isHost && roomCode) {
