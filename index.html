@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <title>Imposter Word Pro - 1000 More Words</title>
+    <title>Imposter Word Pro - Sound Edition</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -160,6 +160,12 @@
 
     <!-- Toast Notifications -->
     <div id="toast-container"></div>
+
+    <!-- Sound Toggle -->
+    <button id="sound-toggle" type="button" aria-label="Toggle sound" class="fixed bottom-5 right-5 z-[9998] w-14 h-14 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,.45)] text-cyan-200 transition-all">
+        <i id="sound-toggle-icon" class="fa-solid fa-volume-high text-xl"></i>
+    </button>
+
 
     <!-- Main App Container -->
     <div id="app-container" class="w-full max-w-md mx-auto h-screen relative">
@@ -1660,7 +1666,11 @@
             roomCode: null,
             isHost: false,
             roomData: null,
-            roomUnsubscribe: null
+            roomUnsubscribe: null,
+
+            // Sound State
+            soundEnabled: true,
+            audioCtx: null
         };
 
         // --- HELPER FUNCTIONS ---
@@ -1671,8 +1681,97 @@
             el.className = 'toast';
             el.innerText = msg;
             container.appendChild(el);
+            sound.danger();
             if(navigator.vibrate) navigator.vibrate(20);
             setTimeout(() => el.remove(), 3000);
+        };
+
+
+        const sound = {
+            ensure: () => {
+                if(!state.soundEnabled) return null;
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if(!AudioContext) return null;
+                    if(!state.audioCtx) state.audioCtx = new AudioContext();
+                    if(state.audioCtx.state === 'suspended') state.audioCtx.resume();
+                    return state.audioCtx;
+                } catch (_) {
+                    return null;
+                }
+            },
+            tone: (freq = 440, duration = 0.08, type = 'sine', volume = 0.035, delay = 0) => {
+                const ctx = sound.ensure();
+                if(!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const start = ctx.currentTime + delay;
+                const end = start + duration;
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, start);
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(start);
+                osc.stop(end + 0.02);
+            },
+            click: () => {
+                sound.tone(720, 0.045, 'triangle', 0.025);
+                sound.tone(980, 0.035, 'sine', 0.016, 0.035);
+            },
+            reveal: () => {
+                sound.tone(420, 0.06, 'sine', 0.026);
+                sound.tone(760, 0.08, 'triangle', 0.032, 0.045);
+                sound.tone(1120, 0.10, 'sine', 0.022, 0.10);
+            },
+            hide: () => {
+                sound.tone(360, 0.055, 'sine', 0.022);
+                sound.tone(240, 0.08, 'triangle', 0.018, 0.045);
+            },
+            next: () => {
+                sound.tone(520, 0.055, 'triangle', 0.026);
+                sound.tone(700, 0.075, 'triangle', 0.028, 0.055);
+            },
+            success: () => {
+                sound.tone(523.25, 0.08, 'sine', 0.03);
+                sound.tone(659.25, 0.08, 'sine', 0.03, 0.075);
+                sound.tone(783.99, 0.12, 'sine', 0.032, 0.15);
+            },
+            danger: () => {
+                sound.tone(180, 0.09, 'sawtooth', 0.025);
+                sound.tone(130, 0.13, 'sawtooth', 0.020, 0.09);
+            },
+            result: () => {
+                sound.tone(220, 0.11, 'triangle', 0.035);
+                sound.tone(330, 0.11, 'triangle', 0.035, 0.10);
+                sound.tone(440, 0.15, 'triangle', 0.034, 0.20);
+                sound.tone(880, 0.20, 'sine', 0.022, 0.34);
+            },
+            toggle: () => {
+                const icon = $('sound-toggle-icon');
+                if(icon) icon.className = state.soundEnabled ? 'fa-solid fa-volume-high text-xl' : 'fa-solid fa-volume-xmark text-xl';
+                const btn = $('sound-toggle');
+                if(btn) {
+                    btn.classList.toggle('text-cyan-200', state.soundEnabled);
+                    btn.classList.toggle('text-rose-300', !state.soundEnabled);
+                    btn.classList.toggle('border-cyan-400/40', state.soundEnabled);
+                    btn.classList.toggle('border-rose-400/40', !state.soundEnabled);
+                }
+                if(state.soundEnabled) sound.success();
+            }
+        };
+
+
+        const playResultSound = () => {
+            const now = Date.now();
+            if(!state.lastResultSoundAt || now - state.lastResultSoundAt > 1200) {
+                state.lastResultSoundAt = now;
+                sound.result();
+            }
         };
 
         const HOLD_IDLE_CYAN = "hold-btn w-full mt-6 bg-gradient-to-r from-slate-800 to-slate-900 py-5 rounded-2xl font-black text-xl border border-cyan-500/30 transition-all uppercase tracking-widest text-cyan-200 active:scale-[0.98]";
@@ -1779,6 +1878,20 @@
                 // Unlimited hold/reveal events (Pointer Events prevents double touch+mouse firing)
                 bindHoldReveal($('btn-off-hold'), app.offline.showReveal, app.offline.hideReveal);
                 bindHoldReveal($('btn-on-hold'), app.online.showReveal, app.online.hideReveal);
+
+
+                // Game sounds
+                $('sound-toggle')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.soundEnabled = !state.soundEnabled;
+                    sound.toggle();
+                });
+                document.addEventListener('click', (e) => {
+                    const target = e.target.closest('button, select');
+                    if(target && target.id !== 'sound-toggle') sound.click();
+                }, true);
+                sound.toggle();
 
                 // Setup Form
                 $('off-add-player-form').addEventListener('submit', app.offline.addPlayer);
@@ -1890,6 +2003,7 @@
                 },
                 startGame: () => {
                     if(state.offPlayers.length < 3) return toast("ត្រូវការអ្នកលេងយ៉ាងតិច ៣ នាក់!");
+                    sound.success();
                     const catKey = $('off-category-select').value;
                     const category = getAllCategories()[catKey];
                     const wordList = Object.values(category.words);
@@ -1943,6 +2057,7 @@
                 },
                 showReveal: (e) => {
                     if(e) e.preventDefault();
+                    sound.reveal();
                     $('off-reveal-hidden').style.display = 'none';
                     $('off-reveal-shown').style.display = 'flex';
                     $('btn-off-hold').innerHTML = '<i class="fa-solid fa-eye mr-2"></i> កំពុងបង្ហាញ — ប្រលែងដើម្បីលាក់';
@@ -1951,6 +2066,7 @@
                 },
                 hideReveal: (e) => {
                     if(e) e.preventDefault();
+                    sound.hide();
                     if($('off-reveal-hidden').style.display === 'none') {
                         $('off-reveal-hidden').style.display = 'flex';
                         $('off-reveal-shown').style.display = 'none';
@@ -1959,6 +2075,7 @@
                     }
                 },
                 nextPlayer: () => {
+                    sound.next();
                     if(state.offRevealIndex < state.offPlayers.length - 1) {
                         state.offRevealIndex++;
                         app.offline.setupRevealScreen();
@@ -1967,12 +2084,14 @@
                     }
                 },
                 startDiscussion: () => {
+                    sound.success();
                     // Keep the discussion/waiting page private: no category, word, or word list is shown here.
                     $('off-discuss-cat-name').innerText = '';
                     $('off-discuss-word-list').innerHTML = '';
                     app.nav('view-offline-discuss');
                 },
                 setupResult: () => {
+                    playResultSound();
                     const game = state.offGameData || {};
                     const imposterName = game.imposterName || state.offPlayers?.[game.imposterIndex] || "មិនស្គាល់";
                     const secretWord = game.word || "មិនស្គាល់";
@@ -1994,6 +2113,7 @@
                     }
                 },
                 createRoom: () => {
+                    sound.success();
                     const name = $('on-my-name').value.trim();
                     if(!name) return toast("សូមបញ្ចូលឈ្មោះរបស់អ្នក!");
                     state.myName = name;
@@ -2019,6 +2139,7 @@
                     });
                 },
                 joinRoom: (code) => {
+                    sound.success();
                     const roomRef = ref(db, `imposterRooms/${code}`);
                     get(roomRef).then(snap => {
                         if(snap.exists()) {
@@ -2104,6 +2225,7 @@
                     }
                 },
                 startGame: () => {
+                    sound.success();
                     const playerUids = Object.keys(state.roomData.players);
                     if(playerUids.length < 3) return toast("ត្រូវការយ៉ាងតិច ៣នាក់!");
 
@@ -2166,6 +2288,7 @@
                 },
                 showReveal: (e) => {
                     if(e) e.preventDefault();
+                    sound.reveal();
                     $('on-reveal-hidden').style.display = 'none';
                     $('on-reveal-shown').style.display = 'flex';
                     $('btn-on-hold').innerHTML = '<i class="fa-solid fa-eye mr-2"></i> កំពុងបង្ហាញ — ប្រលែងដើម្បីលាក់';
@@ -2174,6 +2297,7 @@
                 },
                 hideReveal: (e) => {
                     if(e) e.preventDefault();
+                    sound.hide();
                     if($('on-reveal-hidden').style.display === 'none') {
                         $('on-reveal-hidden').style.display = 'flex';
                         $('on-reveal-shown').style.display = 'none';
@@ -2182,6 +2306,7 @@
                     }
                 },
                 advanceToDiscuss: () => {
+                    sound.success();
                     update(ref(db, `imposterRooms/${state.roomCode}`), { state: 'discuss' });
                 },
                 setupDiscuss: () => {
@@ -2194,9 +2319,11 @@
                     else $('on-host-res-controls').classList.add('hidden');
                 },
                 advanceToResult: () => {
+                    sound.result();
                     update(ref(db, `imposterRooms/${state.roomCode}`), { state: 'result' });
                 },
                 setupResult: () => {
+                    playResultSound();
                     app.nav('view-online-result');
                     const game = state.roomData?.game || {};
                     const players = state.roomData?.players || {};
