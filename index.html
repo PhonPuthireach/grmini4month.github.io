@@ -3,240 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- PWA App Tags -->
+    <!-- PWA Setup -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Werewolf Pro">
-    <meta name="theme-color" content="#020617">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/b91c1c/white?text=W">
+    <meta name="theme-color" content="#0f172a">
+    <title>Imposter Word Pro</title>
     
-    <title>Werewolf Pro - Multiplayer</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Rye&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Kantumruy Pro Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     
     <style>
         body {
             font-family: 'Kantumruy Pro', sans-serif;
-            background-color: #020617; /* slate-950 */
-            color: #f8fafc;
-            overscroll-behavior: none;
-        }
-
-        .font-rye { font-family: 'Rye', cursive; }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .screen { display: none; }
-        .screen.active { display: flex; animation: fadeIn 0.4s ease; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Ambient Backgrounds */
-        .bg-night {
-            background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
-        }
-        .bg-day {
-            background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
-        }
-
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-
-        /* Toast notifications */
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 90%;
-            max-width: 400px;
-        }
-        .toast {
-            background: rgba(0, 0, 0, 0.9);
+            background: #0f172a;
             color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            font-weight: 600;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: slideDown 0.3s forwards, fadeOut 0.5s 3.5s forwards;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 100vh;
+            overflow: hidden;
         }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            z-index: -2;
+        }
+        .ambient-glow-1 {
+            position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%);
+            animation: float 10s infinite ease-in-out alternate;
+            z-index: -1;
+        }
+        .ambient-glow-2 {
+            position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(225,29,72,0.1) 0%, transparent 70%);
+            animation: float 12s infinite ease-in-out alternate-reverse;
+            z-index: -1;
+        }
+        @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 50px); } }
+
+        /* View Management */
+        .view { display: none; width: 100%; height: 100%; flex-direction: column; overflow-y: auto; padding: 1rem; padding-bottom: 2rem;}
+        .view.active { display: flex; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(6,182,212,0.5); }
+
+        /* Toast */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); animation: slideDown 0.3s forwards, fadeOut 0.3s forwards 2.7s; }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+        @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col bg-night transition-colors duration-1000">
+<body>
 
+    <!-- Backgrounds -->
+    <div class="ambient-bg"></div>
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
+
+    <!-- Toast Notifications -->
     <div id="toast-container"></div>
 
-    <!-- Screen 1: Login -->
-    <div id="screen-login" class="screen active h-full w-full flex-col items-center justify-center p-4 relative">
-        <div class="absolute top-10 w-40 h-40 bg-red-900/30 rounded-full blur-[60px] animate-pulse"></div>
-        <div class="glass-panel p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl relative z-10 border-red-900/50">
-            <i class="fa-solid fa-moon text-5xl text-red-600 mb-4 drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]"></i>
-            <h1 class="text-5xl text-white mb-2 font-rye tracking-wider">Werewolf</h1>
-            <p class="text-red-400 mb-8 font-bold tracking-widest text-sm uppercase">Pro Multiplayer</p>
-            
-            <input type="text" id="player-name" placeholder="ឈ្មោះរបស់អ្នក (Your Name)" maxlength="15" class="w-full bg-black/50 border border-slate-700 rounded-xl px-4 py-4 text-white mb-4 focus:outline-none focus:border-red-500 transition-colors text-center font-semibold text-lg">
-            
-            <button onclick="app.login()" class="w-full bg-red-700 hover:bg-red-600 border-b-4 border-red-900 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:translate-y-1 active:border-b-0 uppercase tracking-widest">
-                ចូលលេង (Enter)
-            </button>
-        </div>
-    </div>
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-md mx-auto h-screen relative">
 
-    <!-- Screen 2: Main Menu -->
-    <div id="screen-menu" class="screen h-full w-full flex-col p-4 sm:p-8 max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-8 bg-black/40 p-4 rounded-2xl border border-slate-800">
-            <h1 class="text-3xl font-rye text-red-500">Werewolf</h1>
-            <div class="flex items-center gap-2">
-                <div class="bg-slate-800 px-4 py-2 rounded-full font-bold border border-slate-700 text-sm">
-                    <i class="fa-solid fa-user text-slate-400 mr-2"></i><span id="display-player-name">Player</span>
-                </div>
+        <!-- === VIEW: HOME === -->
+        <div id="view-home" class="view active justify-center items-center space-y-8">
+            <div class="relative text-center">
+                <div class="absolute inset-0 bg-cyan-500/40 blur-[50px] rounded-full animate-pulse"></div>
+                <i class="fa-solid fa-user-secret text-8xl text-cyan-400 relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]"></i>
             </div>
-        </div>
+            
+            <div class="space-y-2 text-center">
+                <h1 class="text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan-300 drop-shadow-xl">
+                    អ្នកបន្លំពាក្យ
+                </h1>
+                <p class="text-cyan-400 font-bold tracking-widest text-lg uppercase bg-black/30 inline-block px-4 py-1 rounded-full border border-cyan-500/30">Imposter Pro</p>
+            </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
-            <!-- Create Room -->
-            <div class="glass-panel p-6 rounded-3xl flex flex-col gap-4 border-red-900/30">
-                <h2 class="text-xl font-bold mb-2 flex items-center"><i class="fa-solid fa-plus-circle text-red-500 mr-2"></i> បង្កើតបន្ទប់ (Create Room)</h2>
-                <input type="text" id="new-room-name" placeholder="ឈ្មោះបន្ទប់ (Room Name)" class="bg-black/50 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500">
-                
-                <div class="grid grid-cols-2 gap-2 mt-2">
-                    <div class="bg-black/40 p-2 rounded-lg text-center border border-slate-800">
-                        <label class="text-xs text-slate-400 block mb-1">ចចក (Wolves)</label>
-                        <input type="number" id="setting-wolves" value="1" min="1" max="5" class="w-full bg-transparent text-center font-bold text-red-400 focus:outline-none">
-                    </div>
-                    <div class="bg-black/40 p-2 rounded-lg text-center border border-slate-800">
-                        <label class="text-xs text-slate-400 block mb-1">ហោរា (Seers)</label>
-                        <input type="number" id="setting-seers" value="1" min="0" max="3" class="w-full bg-transparent text-center font-bold text-purple-400 focus:outline-none">
-                    </div>
-                    <div class="bg-black/40 p-2 rounded-lg text-center border border-slate-800 col-span-2">
-                        <label class="text-xs text-slate-400 block mb-1">គ្រូពេទ្យ (Doctors)</label>
-                        <input type="number" id="setting-doctors" value="1" min="0" max="3" class="w-full bg-transparent text-center font-bold text-emerald-400 focus:outline-none">
-                    </div>
-                </div>
+            <div class="w-full space-y-4 mt-8">
+                <button onclick="app.nav('view-offline-setup')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 py-4 rounded-2xl font-black text-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all flex items-center justify-center border-b-4 border-indigo-800 active:border-b-0 active:translate-y-1">
+                    <i class="fa-solid fa-mobile-screen-button mr-3 text-2xl"></i> លេងលើទូរស័ព្ទតែមួយ (Offline)
+                </button>
 
-                <button onclick="app.createRoom()" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-all mt-4">
-                    បង្កើត និងធ្វើជាមេ (Create & Host)
+                <button onclick="app.nav('view-online-auth')" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-4 rounded-2xl font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center border-b-4 border-teal-800 active:border-b-0 active:translate-y-1">
+                    <i class="fa-solid fa-globe mr-3 text-2xl"></i> លេងអនឡាញ (Online)
+                </button>
+
+                <button onclick="app.nav('view-settings')" class="w-full bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-lg text-slate-200 transition-all flex items-center justify-center border border-slate-600">
+                    <i class="fa-solid fa-database mr-3"></i> គ្រប់គ្រងពាក្យ (Word Settings)
                 </button>
             </div>
+        </div>
 
-            <!-- Join Room -->
-            <div class="glass-panel p-6 rounded-3xl flex flex-col h-full overflow-hidden border-slate-700/50">
-                <h2 class="text-xl font-bold mb-4 flex items-center"><i class="fa-solid fa-satellite-dish text-blue-400 mr-2"></i> បន្ទប់កំពុងរង់ចាំ (Lobbies)</h2>
-                <div id="room-list" class="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                    <div class="text-center text-slate-500 py-8 italic">កំពុងស្វែងរក...</div>
+        <!-- === VIEW: SETTINGS (FIREBASE DB) === -->
+        <div id="view-settings" class="view">
+            <div class="flex items-center mb-6">
+                <button onclick="app.nav('view-home')" class="bg-white/10 p-3 rounded-full hover:bg-white/20 transition-colors mr-4">
+                    <i class="fa-solid fa-arrow-left text-white"></i>
+                </button>
+                <h2 class="text-2xl font-black text-white">ធនាគារពាក្យ (Word Vault)</h2>
+            </div>
+
+            <div class="glass-card mb-4 border-cyan-500/50 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-cyan-600 text-xs font-bold px-3 py-1 rounded-bl-lg">LIVE</div>
+                <h3 class="font-bold text-cyan-300 mb-2"><i class="fa-solid fa-cloud mr-2"></i> បង្កើតប្រធានបទថ្មី (New Category)</h3>
+                <div class="flex gap-2">
+                    <input type="text" id="new-cat-name" placeholder="ឈ្មោះប្រធានបទ..." class="flex-1 bg-black/40 border border-cyan-500/30 rounded-xl px-4 py-2 text-white focus:border-cyan-400 outline-none">
+                    <button onclick="app.settings.addCategory()" class="bg-cyan-600 hover:bg-cyan-500 px-4 rounded-xl font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
+
+            <div id="db-categories-container" class="space-y-4 pb-10">
+                <!-- DB Categories Rendered Here -->
+            </div>
         </div>
-    </div>
 
-    <!-- Screen 3: Lobby -->
-    <div id="screen-lobby" class="screen h-full w-full flex-col p-4 max-w-2xl mx-auto items-center justify-center relative">
-        <button onclick="app.leaveRoom()" class="absolute top-6 left-6 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white z-20">
-            <i class="fa-solid fa-arrow-left"></i>
-        </button>
-        
-        <div class="glass-panel p-6 sm:p-8 rounded-3xl w-full flex flex-col shadow-2xl relative z-10 border-indigo-900/30">
-            <h2 id="lobby-room-name" class="text-3xl text-center text-white font-bold mb-2">Room Name</h2>
-            <p class="text-center text-slate-400 mb-6 text-sm"><span id="lobby-player-count" class="font-bold text-white">0</span> នាក់កំពុងរង់ចាំ</p>
-
-            <div class="flex justify-center gap-4 mb-6 text-xs font-bold uppercase tracking-wider">
-                <span class="bg-red-900/50 text-red-300 px-3 py-1 rounded-lg border border-red-500/30">ចចក: <span id="lb-wolves">1</span></span>
-                <span class="bg-purple-900/50 text-purple-300 px-3 py-1 rounded-lg border border-purple-500/30">ហោរា: <span id="lb-seers">1</span></span>
-                <span class="bg-emerald-900/50 text-emerald-300 px-3 py-1 rounded-lg border border-emerald-500/30">ពេទ្យ: <span id="lb-docs">1</span></span>
+        <!-- === VIEW: OFFLINE SETUP === -->
+        <div id="view-offline-setup" class="view">
+            <div class="flex items-center mb-6">
+                <button onclick="app.nav('view-home')" class="bg-white/10 p-3 rounded-full hover:bg-white/20 transition-colors mr-4">
+                    <i class="fa-solid fa-arrow-left text-white"></i>
+                </button>
+                <h2 class="text-2xl font-black text-white">លេង Offline</h2>
             </div>
 
-            <div id="lobby-players-list" class="grid grid-cols-2 gap-2 mb-8 max-h-[40vh] overflow-y-auto custom-scrollbar">
-                <!-- Players injected here -->
+            <div class="glass-card mb-4">
+                <h3 class="font-bold text-cyan-300 mb-3"><i class="fa-solid fa-users mr-2"></i> អ្នកលេង (<span id="off-player-count">0</span>)</h3>
+                <form id="off-add-player-form" class="flex gap-2 mb-3">
+                    <input type="text" id="off-player-input" placeholder="ឈ្មោះ..." autocomplete="off" class="flex-1 bg-black/40 border border-slate-600 rounded-xl px-4 py-2 text-white focus:border-cyan-400 outline-none">
+                    <button type="submit" class="bg-slate-700 hover:bg-slate-600 px-4 rounded-xl transition-all"><i class="fa-solid fa-user-plus"></i></button>
+                </form>
+                <div id="off-player-list" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar"></div>
+            </div>
+
+            <div class="glass-card mb-6">
+                <h3 class="font-bold text-cyan-300 mb-3"><i class="fa-solid fa-map-pin mr-2"></i> ជ្រើសរើសប្រធានបទ</h3>
+                <select id="off-category-select" class="w-full bg-black/40 border border-slate-600 rounded-xl px-4 py-3 text-white outline-none appearance-none font-bold">
+                    <!-- Options injected via JS -->
+                </select>
+            </div>
+
+            <button onclick="app.offline.startGame()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-2xl font-black text-xl border-b-4 border-cyan-800 active:border-b-0 active:translate-y-1 transition-all uppercase">
+                ចាប់ផ្តើមហ្គេម
+            </button>
+        </div>
+
+        <!-- === VIEW: OFFLINE REVEAL === -->
+        <div id="view-offline-reveal" class="view justify-center items-center text-center">
+            <p class="text-cyan-200 font-bold uppercase tracking-widest mb-2">ហុចទូរស័ព្ទទៅកាន់៖</p>
+            <h2 id="off-reveal-name" class="text-5xl font-black text-white mb-8 bg-slate-800 px-6 py-3 rounded-2xl border border-slate-600">ឈ្មោះ</h2>
+
+            <div class="glass-card w-full min-h-[250px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
+                <div id="off-reveal-hidden" class="flex flex-col items-center w-full">
+                    <i class="fa-solid fa-eye-slash text-5xl text-slate-500 mb-4"></i>
+                    <p class="text-xl text-slate-300 font-bold">ចុចសង្កត់ដើម្បីមើល</p>
+                </div>
+                <div id="off-reveal-shown" class="hidden flex-col items-center w-full animate-[zoomIn_0.2s_forwards]">
+                    <!-- Injected Content -->
+                </div>
+            </div>
+
+            <button id="btn-off-hold" class="w-full mt-6 bg-slate-800 py-5 rounded-2xl font-bold text-xl border border-slate-600 transition-all uppercase tracking-widest text-cyan-300 active:bg-cyan-900">
+                សង្កត់ទីនេះ
+            </button>
+            <button id="btn-off-next" onclick="app.offline.nextPlayer()" class="hidden w-full mt-4 bg-cyan-600 hover:bg-cyan-500 py-4 rounded-2xl font-bold text-lg transition-all uppercase">
+                រួចរាល់ ហុចបន្ត
+            </button>
+        </div>
+
+        <!-- === VIEW: OFFLINE DISCUSSION === -->
+        <div id="view-offline-discuss" class="view justify-center">
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-comments text-4xl text-cyan-400 mb-2"></i>
+                <h2 class="text-3xl font-black text-white">ចាប់ផ្តើមសួរដេញដោល</h2>
+                <p class="text-slate-400 text-sm mt-2">អ្នកបន្លំត្រូវព្យាយាមទាយពាក្យចេញពីបញ្ជីនេះ</p>
+            </div>
+
+            <div class="glass-card mb-6">
+                <h3 class="font-bold text-cyan-300 mb-3 border-b border-white/10 pb-2" id="off-discuss-cat-name">ប្រធានបទ</h3>
+                <div id="off-discuss-word-list" class="flex flex-wrap gap-2">
+                    <!-- Words injected here -->
+                </div>
+            </div>
+
+            <button onclick="app.nav('view-offline-result')" class="w-full bg-rose-600 hover:bg-rose-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-800 active:border-b-0 active:translate-y-1 transition-all uppercase mt-auto">
+                បង្ហាញអ្នកបន្លំ
+            </button>
+        </div>
+
+        <!-- === VIEW: OFFLINE RESULT === -->
+        <div id="view-offline-result" class="view justify-center items-center text-center">
+            <div class="glass-card w-full bg-rose-950/50 border-rose-500/50 relative overflow-hidden mb-8 py-10">
+                <i class="fa-solid fa-triangle-exclamation text-6xl text-rose-500 mb-4 animate-pulse"></i>
+                <p class="text-rose-200 font-bold uppercase tracking-widest text-sm mb-1">អ្នកបន្លំគឺ៖</p>
+                <h2 id="off-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-6">ឈ្មោះ</h2>
+                
+                <div class="bg-black/40 p-4 rounded-xl border border-white/10 inline-block">
+                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យពិតប្រាកដគឺ៖</p>
+                    <p id="off-res-word" class="text-2xl font-bold text-emerald-400">ពាក្យ</p>
+                </div>
+            </div>
+
+            <button onclick="app.nav('view-offline-setup')" class="w-full bg-slate-200 text-slate-900 hover:bg-white py-4 rounded-2xl font-black text-xl transition-all flex items-center justify-center">
+                <i class="fa-solid fa-rotate-right mr-3"></i> លេងម្តងទៀត
+            </button>
+            <button onclick="app.nav('view-home')" class="w-full bg-transparent text-slate-400 hover:text-white py-4 rounded-2xl font-bold mt-2 transition-all">
+                ត្រឡប់ទៅដើម
+            </button>
+        </div>
+
+        <!-- === VIEW: ONLINE AUTH/MENU === -->
+        <div id="view-online-auth" class="view justify-center items-center text-center space-y-6">
+            <i class="fa-solid fa-globe text-6xl text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.5)] mb-4"></i>
+            <h2 class="text-3xl font-black text-white">Online Multiplayer</h2>
+            
+            <div class="glass-card w-full text-left">
+                <label class="text-emerald-300 font-bold mb-2 block text-sm uppercase tracking-widest">ឈ្មោះរបស់អ្នក (Your Name)</label>
+                <input type="text" id="on-my-name" placeholder="បញ្ចូលឈ្មោះ..." class="w-full bg-black/40 border border-slate-600 rounded-xl px-4 py-4 text-white focus:border-emerald-400 outline-none font-bold text-lg mb-6">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="app.online.createRoom()" class="bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-bold transition-all border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1">
+                        បង្កើតបន្ទប់
+                    </button>
+                    <button onclick="app.online.showJoinPrompt()" class="bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold transition-all border-b-4 border-slate-800 active:border-b-0 active:translate-y-1">
+                        ចូលបន្ទប់គេ
+                    </button>
+                </div>
+            </div>
+            <button onclick="app.nav('view-home')" class="text-slate-500 hover:text-white mt-8 font-bold">ថយក្រោយ</button>
+        </div>
+
+        <!-- === VIEW: ONLINE LOBBY === -->
+        <div id="view-online-lobby" class="view">
+            <div class="glass-card mb-4 text-center border-emerald-500/50 bg-emerald-950/20">
+                <p class="text-emerald-400 font-bold uppercase text-xs mb-1">លេខកូដបន្ទប់ (Room Code)</p>
+                <h2 id="on-room-code" class="text-6xl font-black text-white tracking-widest font-mono drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">0000</h2>
+            </div>
+
+            <div class="glass-card mb-4 flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-cyan-300"><i class="fa-solid fa-users mr-2"></i> អ្នកលេងអនឡាញ</h3>
+                    <span id="on-player-count" class="bg-black/50 px-2 py-1 rounded text-xs font-bold text-slate-300">0</span>
+                </div>
+                <div id="on-player-list" class="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
+                    <!-- Players injected here -->
+                </div>
             </div>
 
             <!-- Host Controls -->
-            <div id="lobby-host-controls" class="hidden">
-                <button onclick="app.startGame()" id="btn-start-game" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] text-lg transition-all active:scale-95 disabled:opacity-50 disabled:grayscale">
-                    ចាប់ផ្តើមហ្គេម (Start Game)
+            <div id="on-host-controls" class="hidden space-y-4">
+                <div class="glass-card p-3">
+                    <label class="text-slate-400 text-xs font-bold uppercase mb-1 block">ជ្រើសរើសប្រធានបទ</label>
+                    <select id="on-category-select" class="w-full bg-black/40 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none font-bold">
+                        <!-- Options injected -->
+                    </select>
+                </div>
+                <button onclick="app.online.startGame()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-black text-xl border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 transition-all uppercase">
+                    ចាប់ផ្តើមហ្គេម
                 </button>
-                <p class="text-xs text-slate-500 text-center mt-3">ត្រូវការយ៉ាងតិច ៤នាក់ និងធំជាងចំនួនតួនាទីពិសេស។</p>
             </div>
-            
-            <div id="lobby-guest-controls" class="hidden">
-                <div class="w-full bg-black/40 text-slate-400 font-bold py-4 rounded-xl text-center border border-slate-700 animate-pulse">
-                    រង់ចាំមេកាត់បៀរ... (Waiting for Host)
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Screen 4: The Game Arena -->
-    <div id="screen-game" class="screen h-full w-full flex-col relative">
-        
-        <!-- Top Info Bar -->
-        <div class="bg-black/60 backdrop-blur-md border-b border-white/10 p-4 flex justify-between items-center z-20">
-            <div id="game-phase-indicator" class="font-bold text-lg text-white flex items-center gap-2">
-                <i class="fa-solid fa-moon text-blue-400"></i> រាត្រីកាល (Night)
-            </div>
-            <div class="text-sm font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-full">
-                នៅរស់: <span id="game-alive-count" class="text-emerald-400">0</span>
+            <div id="on-client-wait" class="text-center p-4 text-slate-400 font-bold animate-pulse hidden">
+                រង់ចាំមេបន្ទប់ចាប់ផ្តើមហ្គេម...
             </div>
         </div>
 
-        <!-- Middle Arena (Scrollable) -->
-        <div class="flex-1 overflow-y-auto p-4 pb-32 custom-scrollbar relative z-10 flex flex-col">
-            
-            <!-- My Secret Role Panel -->
-            <div class="bg-gradient-to-r from-slate-900 to-black border border-slate-700 rounded-2xl p-4 mb-6 shadow-xl flex items-center gap-4">
-                <div id="my-role-icon-box" class="w-16 h-16 rounded-xl flex items-center justify-center text-3xl bg-slate-800">
-                    ❓
+        <!-- === VIEW: ONLINE REVEAL === -->
+        <div id="view-online-reveal" class="view justify-center items-center text-center">
+            <p class="text-slate-400 font-bold uppercase tracking-widest mb-2">តួនាទីសម្ងាត់របស់អ្នក៖</p>
+            <h2 id="on-my-name-display" class="text-3xl font-bold text-white mb-8">ឈ្មោះអ្នក</h2>
+
+            <div class="glass-card w-full min-h-[300px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
+                <div id="on-reveal-hidden" class="flex flex-col items-center w-full">
+                    <i class="fa-solid fa-fingerprint text-6xl text-emerald-500/50 mb-4 animate-pulse"></i>
+                    <p class="text-xl text-slate-300 font-bold">ចុចសង្កត់ដើម្បីមើល</p>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">តួនាទីរបស់អ្នក (Your Role)</p>
-                    <h3 id="my-role-name" class="text-2xl font-black text-white">កំពុងផ្ទុក...</h3>
+                <div id="on-reveal-shown" class="hidden flex-col items-center w-full animate-[zoomIn_0.2s_forwards]">
+                    <!-- Injected Content -->
                 </div>
             </div>
 
-            <!-- Central Action Area -->
-            <div id="game-action-area" class="flex-1 flex flex-col justify-center">
-                <!-- Dynamically injected based on phase and role -->
-            </div>
-
-        </div>
-
-        <!-- Fixed Bottom: Host Controls (Only visible to Host) -->
-        <div id="host-game-controls" class="fixed bottom-0 left-0 w-full bg-slate-900/90 backdrop-blur-lg border-t border-slate-700 p-4 z-30 hidden flex-col gap-2">
-            <p class="text-center text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Host Controls</p>
-            <button id="btn-host-action" onclick="app.hostAdvancePhase()" class="w-full bg-white text-black font-black py-4 rounded-xl shadow-lg transition-all active:scale-95">
-                Action
+            <button id="btn-on-hold" class="w-full mt-6 bg-slate-800 py-5 rounded-2xl font-bold text-xl border border-slate-600 transition-all uppercase tracking-widest text-emerald-300 active:bg-emerald-900">
+                សង្កត់ទីនេះ
             </button>
+            
+            <div id="on-host-next-controls" class="hidden w-full mt-8 pt-6 border-t border-white/10">
+                <button onclick="app.online.advanceToDiscuss()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-lg transition-all uppercase">
+                    អ្នកគ្រប់គ្នាមើលរួចរាល់ (បន្ត)
+                </button>
+            </div>
+            <p id="on-client-reveal-wait" class="hidden text-slate-500 text-sm mt-4 font-bold animate-pulse">រង់ចាំអ្នកដទៃមើល...</p>
         </div>
 
-        <!-- Death Overlay (Full screen flash) -->
-        <div id="death-overlay" class="absolute inset-0 bg-red-600 z-50 opacity-0 pointer-events-none transition-opacity duration-1000 flex items-center justify-center">
-            <i class="fa-solid fa-skull text-9xl text-black/50 drop-shadow-2xl"></i>
+        <!-- === VIEW: ONLINE DISCUSS === -->
+        <div id="view-online-discuss" class="view justify-center">
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-tower-broadcast text-4xl text-emerald-400 mb-2 animate-pulse"></i>
+                <h2 class="text-3xl font-black text-white">Live Discussion</h2>
+                <p class="text-slate-400 text-sm mt-2">ជជែកគ្នារកអ្នកបន្លំ</p>
+            </div>
+
+            <div class="glass-card mb-6 flex-1 overflow-y-auto custom-scrollbar">
+                <h3 class="font-bold text-emerald-300 mb-3 border-b border-white/10 pb-2" id="on-discuss-cat-name">ប្រធានបទ</h3>
+                <div id="on-discuss-word-list" class="flex flex-wrap gap-2">
+                    <!-- Words injected here -->
+                </div>
+            </div>
+
+            <div id="on-host-res-controls" class="hidden w-full mt-auto">
+                <button onclick="app.online.advanceToResult()" class="w-full bg-rose-600 hover:bg-rose-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-800 active:border-b-0 active:translate-y-1 transition-all uppercase">
+                    បង្ហាញអ្នកបន្លំ
+                </button>
+            </div>
         </div>
+
+        <!-- === VIEW: ONLINE RESULT === -->
+        <div id="view-online-result" class="view justify-center items-center text-center">
+            <div class="glass-card w-full bg-rose-950/50 border-rose-500/50 relative overflow-hidden mb-8 py-10">
+                <i class="fa-solid fa-skull text-6xl text-rose-500 mb-4 drop-shadow-[0_0_15px_rgba(225,29,72,0.8)]"></i>
+                <p class="text-rose-200 font-bold uppercase tracking-widest text-sm mb-1">អ្នកបន្លំគឺ៖</p>
+                <h2 id="on-res-imposter" class="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(225,29,72,0.8)] mb-6">ឈ្មោះ</h2>
+                
+                <div class="bg-black/40 p-4 rounded-xl border border-white/10 inline-block">
+                    <p class="text-slate-400 text-xs uppercase mb-1">ពាក្យពិតប្រាកដគឺ៖</p>
+                    <p id="on-res-word" class="text-2xl font-bold text-emerald-400">ពាក្យ</p>
+                </div>
+            </div>
+
+            <div id="on-host-end-controls" class="hidden w-full space-y-3 mt-4">
+                <button onclick="app.online.backToLobby()" class="w-full bg-slate-200 text-slate-900 py-4 rounded-xl font-bold text-lg transition-all">
+                    ត្រឡប់ទៅបន្ទប់រង់ចាំ (Lobby)
+                </button>
+                <button onclick="app.online.leaveRoom()" class="w-full bg-rose-900/50 text-rose-200 py-4 rounded-xl font-bold transition-all border border-rose-500/30">
+                    បិទបន្ទប់
+                </button>
+            </div>
+            <div id="on-client-end-controls" class="hidden w-full space-y-3 mt-4">
+                <button onclick="app.online.leaveRoom()" class="w-full bg-slate-800 text-slate-300 hover:text-white py-4 rounded-xl font-bold transition-all">
+                    ចាកចេញពីបន្ទប់
+                </button>
+            </div>
+        </div>
+
     </div>
 
+    <!-- Scripts -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, push, remove, onValue, update, get, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        // Your provided Firebase Config
+        // FIREBASE CONFIGURATION (Provided by User)
         const firebaseConfig = {
             apiKey: "AIzaSyChnxEeg3la_5PA2FlzgRFsSoyIZ9CRpzE",
             authDomain: "sophansystem.firebaseapp.com",
@@ -248,545 +389,533 @@
             measurementId: "G-F0B4EHNKHV"
         };
 
-        const firebaseApp = initializeApp(firebaseConfig);
-        const db = getFirestore(firebaseApp);
-        const auth = getAuth(firebaseApp);
+        const fApp = initializeApp(firebaseConfig);
+        const db = getDatabase(fApp);
 
-        // Strict Paths
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'werewolf-pro-kh';
-        const getRoomsRef = () => collection(db, 'artifacts', APP_ID, 'public', 'data', 'rooms');
-        const getRoomDoc = (roomId) => doc(db, 'artifacts', APP_ID, 'public', 'data', 'rooms', roomId);
+        // --- DATA DEFAULTS ---
+        const DEFAULT_CATEGORIES = {
+            places: { name: "ទីកន្លែង (Places)", words: {"p1":"មន្ទីរពេទ្យ", "p2":"សាលារៀន", "p3":"ផ្សារទំនើប", "p4":"រោងកុន", "p5":"ភោជនីយដ្ឋាន", "p6":"ព្រលានយន្តហោះ", "p7":"ធនាគារ", "p8":"សណ្ឋាគារ"} },
+            food: { name: "អាហារ (Food)", words: {"f1":"គុយទាវ", "f2":"អាម៉ុក", "f3":"នំបញ្ចុក", "f4":"សាច់អាំង", "f5":"ភីហ្សា", "f6":"ស៊ុប", "f7":"បាយឆា", "f8":"ហាំបឺហ្គឺ"} },
+            animals: { name: "សត្វ (Animals)", words: {"a1":"ឆ្កែ", "a2":"ឆ្មា", "a3":"ដំរី", "a4":"ខ្លា", "a5":"ពស់", "a6":"សត្វស្វា", "a7":"សេះ", "a8":"គោ"} }
+        };
 
+        // --- GLOBAL STATE ---
         const state = {
-            user: { id: null, name: '' },
-            roomId: null,
-            room: null,
-            unsubRooms: null,
-            unsubRoom: null,
+            myUid: 'uid_' + Math.random().toString(36).substr(2, 9),
+            myName: '',
             
-            // Local Game state for tracking
-            myActionSubmitted: false,
-            localSeerResult: null
+            // Database Synced Categories
+            customCategories: {},
+            
+            // Offline State
+            offPlayers: ["កក្កដា", "សុខា", "ចាន់ណា"],
+            offCategory: "places",
+            offGameData: null,
+            offRevealIndex: 0,
+            
+            // Online State
+            roomCode: null,
+            isHost: false,
+            roomData: null,
+            roomUnsubscribe: null
         };
 
-        const ROLES = {
-            WOLF: { id: 'WOLF', name: 'ចចកកំណាច', en: 'Werewolf', team: 'bad', icon: 'fa-solid fa-teeth', color: 'text-red-500', bg: 'bg-red-500' },
-            SEER: { id: 'SEER', name: 'ហោរាទាយឆុត', en: 'Seer', team: 'good', icon: 'fa-solid fa-eye', color: 'text-purple-400', bg: 'bg-purple-500' },
-            DOC: { id: 'DOC', name: 'គ្រូពេទ្យ', en: 'Doctor', team: 'good', icon: 'fa-solid fa-shield-heart', color: 'text-emerald-400', bg: 'bg-emerald-500' },
-            VILLAGER: { id: 'VILLAGER', name: 'អ្នកភូមិ', en: 'Villager', team: 'good', icon: 'fa-solid fa-users', color: 'text-sky-400', bg: 'bg-sky-500' }
-        };
-
-        // Utilities
-        function toast(msg) {
-            const container = document.getElementById('toast-container');
+        // --- HELPER FUNCTIONS ---
+        const $ = (id) => document.getElementById(id);
+        const toast = (msg) => {
+            const container = $('toast-container');
             const el = document.createElement('div');
             el.className = 'toast';
-            el.textContent = msg;
+            el.innerText = msg;
             container.appendChild(el);
-            setTimeout(() => el.remove(), 4000);
-        }
+            if(navigator.vibrate) navigator.vibrate(20);
+            setTimeout(() => el.remove(), 3000);
+        };
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        const getAllCategories = () => {
+            // Merge defaults with custom DB categories
+            let merged = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+            for(let key in state.customCategories) {
+                merged[key] = state.customCategories[key];
+            }
+            return merged;
+        };
 
-        function generateId() {
-            return Math.random().toString(36).substr(2, 6).toUpperCase();
-        }
-
+        // --- APP CONTROLLER ---
         window.app = {
-            login: async () => {
-                const nameInput = document.getElementById('player-name').value.trim();
-                if (!nameInput) return toast("សូមបញ្ចូលឈ្មោះរបស់អ្នក! (Enter Name)");
-                
-                const btn = document.querySelector('#screen-login button');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                btn.disabled = true;
-
-                try {
-                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (token) await signInWithCustomToken(auth, token);
-                    else await signInAnonymously(auth);
-
-                    state.user.id = auth.currentUser.uid;
-                    state.user.name = nameInput;
-                    
-                    document.getElementById('display-player-name').textContent = state.user.name;
-                    showScreen('screen-menu');
-                    app.listenRooms();
-
-                } catch (e) {
-                    console.error(e);
-                    toast("មិនអាចភ្ជាប់ទៅកាន់ Server បានទេ។ (Connection Failed)");
-                    btn.innerHTML = 'ចូលលេង (Enter)';
-                    btn.disabled = false;
-                }
+            nav: (viewId) => {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                $(viewId).classList.add('active');
+                if(viewId === 'view-offline-setup') app.offline.renderSetup();
+                if(viewId === 'view-settings') app.settings.render();
             },
 
-            listenRooms: () => {
-                if (state.unsubRooms) state.unsubRooms();
-                
-                state.unsubRooms = onSnapshot(query(getRoomsRef()), (snap) => {
-                    const list = document.getElementById('room-list');
-                    list.innerHTML = '';
-                    
-                    if (snap.empty) {
-                        list.innerHTML = '<div class="text-center text-slate-500 py-8 italic">គ្មានបន្ទប់លេងទេ។ បង្កើតមួយទៅ!</div>';
-                        return;
-                    }
-
-                    snap.forEach(docSnap => {
-                        const r = docSnap.data();
-                        if (r.state !== 'lobby') return; // Hide running games
-
-                        const div = document.createElement('div');
-                        div.className = 'bg-black/40 border border-slate-700 p-4 rounded-2xl flex justify-between items-center';
-                        div.innerHTML = `
-                            <div>
-                                <h3 class="font-bold text-white text-lg">${r.name}</h3>
-                                <p class="text-xs text-slate-400"><i class="fa-solid fa-crown text-yellow-500 mr-1"></i> ${r.hostName} | 👥 ${r.players.length}</p>
-                            </div>
-                            <button onclick="app.joinRoom('${r.id}')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl transition-colors shadow-lg">
-                                ចូល (Join)
-                            </button>
-                        `;
-                        list.appendChild(div);
-                    });
-                }, err => {
-                    console.error(err);
-                    toast("Database setup required. Did you create the Firestore Database?");
-                });
-            },
-
-            createRoom: async () => {
-                const name = document.getElementById('new-room-name').value.trim() || `${state.user.name}'s Room`;
-                const id = generateId();
-                const wolves = parseInt(document.getElementById('setting-wolves').value) || 1;
-                const seers = parseInt(document.getElementById('setting-seers').value) || 1;
-                const docs = parseInt(document.getElementById('setting-doctors').value) || 1;
-
-                const roomData = {
-                    id, name, hostId: state.user.id, hostName: state.user.name, state: 'lobby',
-                    settings: { wolves, seers, docs },
-                    players: [{ id: state.user.id, name: state.user.name, role: null, isAlive: true }],
-                    gameState: null,
-                    createdAt: serverTimestamp()
-                };
-
-                try {
-                    await setDoc(getRoomDoc(id), roomData);
-                    app.enterLobby(id);
-                } catch(e) { console.error(e); toast("Failed to create room."); }
-            },
-
-            joinRoom: async (id) => {
-                if(state.unsubRooms) state.unsubRooms();
-                app.enterLobby(id);
-                
-                // Add self
-                setTimeout(async () => {
-                    if(!state.room) return;
-                    if(!state.room.players.find(p => p.id === state.user.id)) {
-                        const newPlayers = [...state.room.players, { id: state.user.id, name: state.user.name, role: null, isAlive: true }];
-                        await updateDoc(getRoomDoc(id), { players: newPlayers });
-                    }
-                }, 500);
-            },
-
-            leaveRoom: async () => {
-                if(state.unsubRoom) state.unsubRoom();
-                if(state.room && state.roomId) {
-                    const ref = getRoomDoc(state.roomId);
-                    const isHost = state.room.hostId === state.user.id;
-                    const remaining = state.room.players.filter(p => p.id !== state.user.id);
-                    
-                    if (remaining.length === 0) {
-                        await deleteDoc(ref);
-                    } else {
-                        const updates = { players: remaining };
-                        if(isHost) {
-                            updates.hostId = remaining[0].id;
-                            updates.hostName = remaining[0].name;
-                        }
-                        await updateDoc(ref, updates);
-                    }
-                }
-                state.roomId = null;
-                state.room = null;
-                showScreen('screen-menu');
-                app.listenRooms();
-            },
-
-            enterLobby: (id) => {
-                state.roomId = id;
-                showScreen('screen-lobby');
-                
-                state.unsubRoom = onSnapshot(getRoomDoc(id), snap => {
-                    if(!snap.exists()) {
-                        toast("បន្ទប់ត្រូវបានបិទ (Room closed)");
-                        app.leaveRoom();
-                        return;
-                    }
-                    
-                    const oldPhase = state.room?.gameState?.phase;
-                    state.room = snap.data();
-                    const newPhase = state.room?.gameState?.phase;
-
-                    if (state.room.state === 'lobby') app.renderLobby();
-                    else if (state.room.state === 'playing') {
-                        if(oldPhase !== newPhase) state.myActionSubmitted = false; // Reset local action block on phase change
-                        app.renderGame();
-                    }
-                });
-            },
-
-            renderLobby: () => {
-                const r = state.room;
-                document.getElementById('lobby-room-name').textContent = r.name;
-                document.getElementById('lobby-player-count').textContent = r.players.length;
-                document.getElementById('lb-wolves').textContent = r.settings.wolves;
-                document.getElementById('lb-seers').textContent = r.settings.seers;
-                document.getElementById('lb-docs').textContent = r.settings.docs;
-
-                const list = document.getElementById('lobby-players-list');
-                list.innerHTML = '';
-                r.players.forEach(p => {
-                    const isHost = p.id === r.hostId;
-                    const isMe = p.id === state.user.id;
-                    list.innerHTML += `
-                        <div class="bg-black/30 border ${isMe ? 'border-blue-500' : 'border-slate-700'} p-3 rounded-xl flex items-center justify-between">
-                            <span class="font-bold text-sm text-white truncate max-w-[100px]">${p.name}</span>
-                            ${isHost ? '<i class="fa-solid fa-crown text-yellow-500 text-xs"></i>' : ''}
-                        </div>
-                    `;
+            init: () => {
+                // Listen to Database custom categories
+                const catRef = ref(db, 'imposterWords/categories');
+                onValue(catRef, (snapshot) => {
+                    const data = snapshot.val();
+                    state.customCategories = data || {};
+                    if($('view-settings').classList.contains('active')) app.settings.render();
+                    if($('view-offline-setup').classList.contains('active')) app.offline.renderSetup();
+                    if(state.isHost && state.roomCode) app.online.renderLobbyControls();
                 });
 
-                const isHost = r.hostId === state.user.id;
-                document.getElementById('lobby-host-controls').style.display = isHost ? 'block' : 'none';
-                document.getElementById('lobby-guest-controls').style.display = isHost ? 'none' : 'block';
+                // Setup Offline Hold Events
+                const btnOffHold = $('btn-off-hold');
+                btnOffHold.addEventListener('touchstart', app.offline.showReveal, {passive: false});
+                btnOffHold.addEventListener('touchend', app.offline.hideReveal);
+                btnOffHold.addEventListener('mousedown', app.offline.showReveal);
+                btnOffHold.addEventListener('mouseup', app.offline.hideReveal);
+                btnOffHold.addEventListener('mouseleave', app.offline.hideReveal);
 
-                if(isHost) {
-                    const totalSpecial = r.settings.wolves + r.settings.seers + r.settings.docs;
-                    const btn = document.getElementById('btn-start-game');
-                    if (r.players.length < 4 || totalSpecial >= r.players.length) {
-                        btn.disabled = true;
-                    } else {
-                        btn.disabled = false;
-                    }
-                }
+                // Setup Online Hold Events
+                const btnOnHold = $('btn-on-hold');
+                btnOnHold.addEventListener('touchstart', app.online.showReveal, {passive: false});
+                btnOnHold.addEventListener('touchend', app.online.hideReveal);
+                btnOnHold.addEventListener('mousedown', app.online.showReveal);
+                btnOnHold.addEventListener('mouseup', app.online.hideReveal);
+                btnOnHold.addEventListener('mouseleave', app.online.hideReveal);
+
+                // Setup Form
+                $('off-add-player-form').addEventListener('submit', app.offline.addPlayer);
             },
 
-            startGame: async () => {
-                const r = state.room;
-                let deck = [];
-                for(let i=0; i<r.settings.wolves; i++) deck.push(ROLES.WOLF.id);
-                for(let i=0; i<r.settings.seers; i++) deck.push(ROLES.SEER.id);
-                for(let i=0; i<r.settings.docs; i++) deck.push(ROLES.DOC.id);
-                while(deck.length < r.players.length) deck.push(ROLES.VILLAGER.id);
-                
-                deck = deck.sort(() => Math.random() - 0.5);
-
-                const newPlayers = r.players.map((p, i) => ({ ...p, role: deck[i], isAlive: true }));
-
-                const gameState = {
-                    phase: 'night',
-                    dayNum: 1,
-                    nightActions: { wolfTarget: null, docTarget: null }, // seer handles locally/privately or writes to separate log
-                    votes: {},
-                    logs: [],
-                    winner: null
-                };
-
-                await updateDoc(getRoomDoc(state.roomId), {
-                    state: 'playing',
-                    players: newPlayers,
-                    gameState: gameState
-                });
-            },
-
-            // Client submits their night action
-            submitNightAction: async (targetId) => {
-                if(!state.user.id || !state.room) return;
-                state.myActionSubmitted = true;
-                app.renderGame(); // re-render to show waiting state locally
-
-                const me = state.room.players.find(p => p.id === state.user.id);
-                const ref = getRoomDoc(state.roomId);
-
-                if (me.role === 'WOLF') {
-                    await updateDoc(ref, { 'gameState.nightActions.wolfTarget': targetId });
-                } else if (me.role === 'DOC') {
-                    await updateDoc(ref, { 'gameState.nightActions.docTarget': targetId });
-                } else if (me.role === 'SEER') {
-                    // Local logic: just show the result to the seer. No need to sync seer targets for MVP unless logging.
-                    const target = state.room.players.find(p => p.id === targetId);
-                    state.localSeerResult = target;
-                    app.renderGame(); // Force update to show result
-                }
-            },
-
-            submitVote: async (targetId) => {
-                if(state.myActionSubmitted) return;
-                state.myActionSubmitted = true;
-                app.renderGame();
-                
-                const ref = getRoomDoc(state.roomId);
-                // Dynamic key update
-                await updateDoc(ref, { [`gameState.votes.${state.user.id}`]: targetId || 'skip' });
-            },
-
-            // Host Only Functions
-            hostAdvancePhase: async () => {
-                const r = state.room;
-                const gs = r.gameState;
-                const ref = getRoomDoc(state.roomId);
-                
-                let newPlayers = [...r.players];
-                let newGs = { ...gs };
-
-                if (gs.phase === 'night') {
-                    // Calculate deaths
-                    let diedId = null;
-                    if (gs.nightActions.wolfTarget && gs.nightActions.wolfTarget !== gs.nightActions.docTarget) {
-                        diedId = gs.nightActions.wolfTarget;
-                        newPlayers = newPlayers.map(p => p.id === diedId ? { ...p, isAlive: false } : p);
-                    }
+            // --- SETTINGS CONTROLLER (FIREBASE SYNC) ---
+            settings: {
+                render: () => {
+                    const container = $('db-categories-container');
+                    container.innerHTML = '';
+                    const allCats = getAllCategories();
                     
-                    const deadName = diedId ? newPlayers.find(p=>p.id===diedId).name : null;
-                    newGs.logs = [`ព្រឹកថ្ងៃទី ${gs.dayNum}: ${deadName ? `${deadName} ត្រូវបានសម្លាប់!` : 'គ្មាននរណាស្លាប់ទេយប់មិញ។'}`];
-                    
-                    // Check Win Condition
-                    const win = app.checkWin(newPlayers);
-                    if (win) {
-                        newGs.phase = 'game_over';
-                        newGs.winner = win;
-                    } else {
-                        newGs.phase = 'day';
-                    }
-
-                } else if (gs.phase === 'day') {
-                    newGs.phase = 'vote';
-                    newGs.votes = {};
-
-                } else if (gs.phase === 'vote') {
-                    // Tally votes
-                    const voteCounts = {};
-                    let maxVotes = 0;
-                    let executionId = null;
-
-                    Object.values(gs.votes).forEach(vid => {
-                        if (vid === 'skip') return;
-                        voteCounts[vid] = (voteCounts[vid] || 0) + 1;
-                        if (voteCounts[vid] > maxVotes) {
-                            maxVotes = voteCounts[vid];
-                            executionId = vid;
-                        }
-                    });
-
-                    // Check for ties (simplified: just take the first max)
-                    if (executionId) {
-                        newPlayers = newPlayers.map(p => p.id === executionId ? { ...p, isAlive: false } : p);
-                        const execName = newPlayers.find(p=>p.id===executionId).name;
-                        newGs.logs = [`ការបោះឆ្នោត: ${execName} ត្រូវបានប្រហារជីវិត! (Executed)`];
-                    } else {
-                        newGs.logs = [`ការបោះឆ្នោត: គ្មាននរណាត្រូវប្រហារជីវិតទេ! (Skipped)`];
-                    }
-
-                    const win = app.checkWin(newPlayers);
-                    if (win) {
-                        newGs.phase = 'game_over';
-                        newGs.winner = win;
-                    } else {
-                        newGs.phase = 'night';
-                        newGs.dayNum++;
-                        newGs.nightActions = { wolfTarget: null, docTarget: null };
-                        state.localSeerResult = null; // Clear seer mem for next night
-                    }
-                }
-
-                await updateDoc(ref, { players: newPlayers, gameState: newGs });
-            },
-
-            checkWin: (players) => {
-                const alive = players.filter(p => p.isAlive);
-                const wolves = alive.filter(p => p.role === 'WOLF').length;
-                const villagers = alive.length - wolves;
-
-                if (wolves === 0) return 'GOOD';
-                if (wolves >= villagers) return 'BAD';
-                return null;
-            },
-
-            renderGame: () => {
-                showScreen('screen-game');
-                const r = state.room;
-                const gs = r.gameState;
-                const me = r.players.find(p => p.id === state.user.id);
-                const isHost = r.hostId === state.user.id;
-
-                // 1. Update Header & BG
-                const body = document.body;
-                const phaseInd = document.getElementById('game-phase-indicator');
-                document.getElementById('game-alive-count').textContent = r.players.filter(p=>p.isAlive).length;
-
-                if (gs.phase === 'night') {
-                    body.className = "h-screen w-screen overflow-hidden flex flex-col bg-night transition-colors duration-1000";
-                    phaseInd.innerHTML = '<i class="fa-solid fa-moon text-blue-400"></i> រាត្រីកាល (Night)';
-                } else if (gs.phase === 'day' || gs.phase === 'vote') {
-                    body.className = "h-screen w-screen overflow-hidden flex flex-col bg-day transition-colors duration-1000";
-                    phaseInd.innerHTML = '<i class="fa-solid fa-sun text-yellow-400"></i> ពេលថ្ងៃ (Day)';
-                }
-
-                // 2. My Identity Card
-                const roleData = ROLES[me.role];
-                const iconBox = document.getElementById('my-role-icon-box');
-                iconBox.className = `w-16 h-16 rounded-xl flex items-center justify-center text-3xl shadow-lg ${roleData.bg} ${me.isAlive ? '' : 'grayscale opacity-50'}`;
-                iconBox.innerHTML = `<i class="${roleData.icon} text-white"></i>`;
-                document.getElementById('my-role-name').innerHTML = `${roleData.name} <span class="text-xs ml-2 text-slate-400 font-normal">(${roleData.en})</span> ${me.isAlive ? '' : '<span class="text-red-500 font-bold ml-2"> [ស្លាប់/DEAD]</span>'}`;
-
-                // 3. Main Arena
-                const arena = document.getElementById('game-action-area');
-                arena.innerHTML = '';
-
-                if (gs.phase === 'game_over') {
-                    arena.innerHTML = `
-                        <div class="text-center p-8 bg-black/50 border ${gs.winner === 'GOOD' ? 'border-emerald-500 text-emerald-400' : 'border-red-500 text-red-500'} rounded-3xl shadow-2xl">
-                            <i class="fa-solid ${gs.winner === 'GOOD' ? 'fa-sun text-yellow-400' : 'fa-teeth'} text-7xl mb-4 animate-pulse"></i>
-                            <h2 class="text-4xl font-black mb-2">${gs.winner === 'GOOD' ? 'ភាគីល្អឈ្នះ!' : 'ចចកឈ្នះ!'}</h2>
-                            <p class="text-slate-300 font-bold">${gs.winner === 'GOOD' ? 'Villagers Win' : 'Wolves Win'}</p>
-                        </div>
-                        <div class="mt-6 space-y-2">
-                            ${r.players.map(p => `
-                                <div class="bg-black/30 p-3 rounded-lg flex justify-between items-center border border-white/5">
-                                    <span class="${p.isAlive ? 'text-white' : 'text-slate-500 line-through'}">${p.name}</span>
-                                    <span class="text-xs font-bold px-2 py-1 rounded bg-black/50 ${ROLES[p.role].color}">${ROLES[p.role].name}</span>
+                    for(let key in allCats) {
+                        const cat = allCats[key];
+                        const isDefault = Object.keys(DEFAULT_CATEGORIES).includes(key);
+                        
+                        let html = `
+                            <div class="glass-card">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-bold text-white text-lg">${cat.name} ${isDefault ? '<span class="text-xs bg-slate-700 px-2 rounded ml-2 text-slate-300">Default</span>' : ''}</h4>
+                                    ${!isDefault ? `<button onclick="app.settings.deleteCategory('${key}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>` : ''}
                                 </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-                else if (!me.isAlive) {
-                    arena.innerHTML = `
-                        <div class="text-center p-8 opacity-70">
-                            <i class="fa-solid fa-ghost text-6xl text-slate-500 mb-4 animate-bounce"></i>
-                            <h3 class="text-2xl font-bold text-slate-400">អ្នកបានស្លាប់ហើយ</h3>
-                            <p class="text-slate-500 mt-2">រង់ចាំមើលអ្នកដទៃលេង... (Spectating)</p>
-                        </div>
-                    `;
-                }
-                else if (gs.phase === 'night') {
-                    if (state.myActionSubmitted) {
-                        arena.innerHTML = `
-                            <div class="text-center p-8 bg-black/30 rounded-3xl border border-slate-800">
-                                <i class="fa-solid fa-hourglass-half text-4xl text-blue-400 mb-4 animate-pulse"></i>
-                                <h3 class="text-xl font-bold text-slate-300">រង់ចាំអ្នកផ្សេងទៀត...</h3>
-                                <p class="text-sm text-slate-500 mt-2">Waiting for others to finish their night actions.</p>
-                                ${state.localSeerResult ? `
-                                    <div class="mt-6 p-4 bg-purple-900/30 border border-purple-500/50 rounded-xl">
-                                        <p class="text-purple-300 font-bold">លទ្ធផលហោរា (Seer Result):</p>
-                                        <p class="text-2xl mt-2 ${state.localSeerResult.role === 'WOLF' ? 'text-red-500' : 'text-sky-400'}">
-                                            ${state.localSeerResult.name} ជា ${state.localSeerResult.role === 'WOLF' ? 'ភាគីអាក្រក់!' : 'ភាគីល្អ!'}
-                                        </p>
-                                    </div>
-                                ` : ''}
-                            </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
                         `;
-                    } else if (me.role === 'WOLF') {
-                        arena.innerHTML = `<h3 class="text-center text-red-500 font-bold mb-4"><i class="fa-solid fa-skull mr-2"></i> ជ្រើសរើសអ្នកត្រូវសម្លាប់ (Choose Victim)</h3>` + app.generatePlayerGrid('submitNightAction', ['WOLF'], 'bg-red-900/40 border-red-500 text-red-100 hover:bg-red-700');
-                    } else if (me.role === 'DOC') {
-                        arena.innerHTML = `<h3 class="text-center text-emerald-400 font-bold mb-4"><i class="fa-solid fa-shield mr-2"></i> ជ្រើសរើសអ្នកត្រូវការពារ (Choose to Protect)</h3>` + app.generatePlayerGrid('submitNightAction', [], 'bg-emerald-900/40 border-emerald-500 text-emerald-100 hover:bg-emerald-700');
-                    } else if (me.role === 'SEER') {
-                        arena.innerHTML = `<h3 class="text-center text-purple-400 font-bold mb-4"><i class="fa-solid fa-eye mr-2"></i> ជ្រើសរើសអ្នកត្រូវទាយ (Choose to Scan)</h3>` + app.generatePlayerGrid('submitNightAction', ['SEER'], 'bg-purple-900/40 border-purple-500 text-purple-100 hover:bg-purple-700');
-                    } else {
-                        arena.innerHTML = `
-                            <div class="text-center p-8 opacity-50">
-                                <i class="fa-solid fa-bed text-5xl text-slate-600 mb-4"></i>
-                                <h3 class="text-xl font-bold text-slate-400">កំពុងគេងលក់...</h3>
-                                <p class="text-sm text-slate-500 mt-2">អ្នកគ្មានសមត្ថភាពនៅពេលយប់ទេ។ (Sleeping)</p>
-                            </div>
-                        `;
-                    }
-                }
-                else if (gs.phase === 'day') {
-                    arena.innerHTML = `
-                        <div class="bg-black/50 border border-slate-700 p-6 rounded-3xl shadow-xl text-center">
-                            <i class="fa-solid fa-bullhorn text-4xl text-yellow-500 mb-4"></i>
-                            <h3 class="text-2xl font-black text-white mb-6">ព័ត៌មានប្រចាំថ្ងៃ</h3>
-                            <div class="text-lg font-bold ${gs.logs[0].includes('សម្លាប់') ? 'text-red-400' : 'text-emerald-400'} bg-black/50 p-4 rounded-xl border border-white/5">
-                                ${gs.logs[0]}
-                            </div>
-                            <p class="text-slate-400 mt-6 text-sm">សូមធ្វើការពិភាក្សាគ្នាដោយផ្ទាល់! (Discuss in real life!)</p>
-                        </div>
-                    `;
-                }
-                else if (gs.phase === 'vote') {
-                    if (state.myActionSubmitted) {
-                        arena.innerHTML = `
-                            <div class="text-center p-8 bg-black/30 rounded-3xl border border-slate-800">
-                                <i class="fa-solid fa-check-circle text-4xl text-emerald-400 mb-4"></i>
-                                <h3 class="text-xl font-bold text-white">បានបោះឆ្នោតរួចរាល់</h3>
-                                <p class="text-slate-400 mt-2">Waiting for others to vote... ${Object.keys(gs.votes).length}/${r.players.filter(p=>p.isAlive).length}</p>
-                            </div>
-                        `;
-                    } else {
-                        arena.innerHTML = `
-                            <div class="mb-4 text-center">
-                                <h3 class="text-xl font-bold text-yellow-400 mb-1"><i class="fa-solid fa-gavel"></i> ការបោះឆ្នោត (Voting)</h3>
-                                <p class="text-sm text-slate-400">តើអ្នកចង់ប្រហារជីវិតនរណា?</p>
-                            </div>
-                            ${app.generatePlayerGrid('submitVote', [state.user.id], 'bg-slate-800 border-slate-600 text-white hover:bg-red-800 hover:border-red-500')}
-                            <button onclick="app.submitVote(null)" class="w-full mt-4 bg-transparent border border-slate-600 text-slate-400 font-bold py-4 rounded-xl hover:bg-slate-800 transition-colors">
-                                រំលងមិនបោះឆ្នោត (Skip Vote)
-                            </button>
-                        `;
-                    }
-                }
+                        
+                        for(let wordId in cat.words) {
+                            html += `
+                                <div class="bg-slate-800 border border-slate-600 px-3 py-1 rounded-lg flex items-center gap-2 text-sm">
+                                    <span>${cat.words[wordId]}</span>
+                                    ${!isDefault ? `<button onclick="app.settings.deleteWord('${key}', '${wordId}')" class="text-rose-500 hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                                </div>
+                            `;
+                        }
 
-                // 4. Host Controls
-                const hostPanel = document.getElementById('host-game-controls');
-                const hostBtn = document.getElementById('btn-host-action');
-                if (isHost && gs.phase !== 'game_over') {
-                    hostPanel.classList.remove('hidden');
-                    hostPanel.classList.add('flex');
-                    
-                    if (gs.phase === 'night') {
-                        hostBtn.textContent = 'ដាស់អ្នកភូមិ (Wake Up Village)';
-                        hostBtn.className = 'w-full bg-yellow-500 text-yellow-950 hover:bg-yellow-400 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(234,179,8,0.5)] transition-all active:scale-95';
-                    } else if (gs.phase === 'day') {
-                        hostBtn.textContent = 'បើកការបោះឆ្នោត (Start Voting)';
-                        hostBtn.className = 'w-full bg-blue-600 text-white hover:bg-blue-500 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.5)] transition-all active:scale-95';
-                    } else if (gs.phase === 'vote') {
-                        hostBtn.textContent = 'សរុបសន្លឹកឆ្នោត (Tally Votes)';
-                        hostBtn.className = 'w-full bg-red-600 text-white hover:bg-red-500 font-black py-4 rounded-xl shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all active:scale-95';
+                        html += `</div>`;
+
+                        if(!isDefault) {
+                            html += `
+                                <div class="flex gap-2 mt-4 border-t border-slate-700 pt-4">
+                                    <input type="text" id="new-word-${key}" placeholder="បន្ថែមពាក្យថ្មី..." class="flex-1 bg-black/40 border border-slate-600 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none text-sm">
+                                    <button onclick="app.settings.addWord('${key}')" class="bg-slate-700 hover:bg-slate-600 px-4 rounded-lg font-bold transition-all"><i class="fa-solid fa-plus text-cyan-400"></i></button>
+                                </div>
+                            `;
+                        }
+                        
+                        html += `</div>`;
+                        container.innerHTML += html;
                     }
-                } else {
-                    hostPanel.classList.add('hidden');
-                    hostPanel.classList.remove('flex');
+                },
+                addCategory: () => {
+                    const input = $('new-cat-name');
+                    const val = input.value.trim();
+                    if(!val) return toast("សូមបញ្ចូលឈ្មោះប្រធានបទ!");
+                    push(ref(db, 'imposterWords/categories'), { name: val, words: {"w1": "ឧទាហរណ៍"} })
+                        .then(() => { input.value = ''; toast("បានបង្កើតជោគជ័យ!"); });
+                },
+                deleteCategory: (key) => {
+                    if(confirm("តើអ្នកពិតជាចង់លុបប្រធានបទនេះមែនទេ?")) {
+                        remove(ref(db, `imposterWords/categories/${key}`));
+                    }
+                },
+                addWord: (catKey) => {
+                    const input = $(`new-word-${catKey}`);
+                    const val = input.value.trim();
+                    if(!val) return;
+                    push(ref(db, `imposterWords/categories/${catKey}/words`), val)
+                        .then(() => { input.value = ''; });
+                },
+                deleteWord: (catKey, wordId) => {
+                    remove(ref(db, `imposterWords/categories/${catKey}/words/${wordId}`));
                 }
             },
 
-            generatePlayerGrid: (actionFn, excludeRolesIds = [], btnClass = '') => {
-                const aliveTargetable = state.room.players.filter(p => p.isAlive && !excludeRolesIds.includes(p.role) && !excludeRolesIds.includes(p.id));
-                
-                let html = `<div class="grid grid-cols-2 gap-3">`;
-                aliveTargetable.forEach(p => {
-                    html += `
-                        <button onclick="app.${actionFn}('${p.id}')" class="p-4 rounded-xl border-2 font-bold transition-all shadow-lg active:scale-95 truncate ${btnClass}">
-                            ${p.name}
-                        </button>
-                    `;
-                });
-                html += `</div>`;
-                return html;
+            // --- OFFLINE CONTROLLER ---
+            offline: {
+                renderSetup: () => {
+                    const pList = $('off-player-list');
+                    pList.innerHTML = '';
+                    state.offPlayers.forEach((p, i) => {
+                        pList.innerHTML += `
+                            <div class="bg-black/50 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-slate-600 font-bold text-sm">
+                                <span>${p}</span>
+                                <button type="button" onclick="app.offline.remPlayer(${i})" class="text-rose-400 ml-1"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        `;
+                    });
+                    $('off-player-count').innerText = state.offPlayers.length;
+
+                    const catSelect = $('off-category-select');
+                    catSelect.innerHTML = '';
+                    const allCats = getAllCategories();
+                    for(let key in allCats) {
+                        catSelect.innerHTML += `<option value="${key}">${allCats[key].name}</option>`;
+                    }
+                },
+                addPlayer: (e) => {
+                    e.preventDefault();
+                    const val = $('off-player-input').value.trim();
+                    if(val && state.offPlayers.length < 15) {
+                        state.offPlayers.push(val);
+                        $('off-player-input').value = '';
+                        app.offline.renderSetup();
+                        if(navigator.vibrate) navigator.vibrate(10);
+                    }
+                },
+                remPlayer: (i) => {
+                    state.offPlayers.splice(i, 1);
+                    app.offline.renderSetup();
+                },
+                startGame: () => {
+                    if(state.offPlayers.length < 3) return toast("ត្រូវការអ្នកលេងយ៉ាងតិច ៣ នាក់!");
+                    const catKey = $('off-category-select').value;
+                    const category = getAllCategories()[catKey];
+                    const wordList = Object.values(category.words);
+                    if(wordList.length === 0) return toast("ប្រធានបទនេះគ្មានពាក្យទេ!");
+
+                    const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+                    const randomImpostor = Math.floor(Math.random() * state.offPlayers.length);
+
+                    state.offGameData = {
+                        word: randomWord,
+                        imposterIndex: randomImpostor,
+                        categoryKey: catKey,
+                        categoryName: category.name,
+                        allWords: wordList
+                    };
+                    state.offRevealIndex = 0;
+                    app.offline.setupRevealScreen();
+                    app.nav('view-offline-reveal');
+                },
+                setupRevealScreen: () => {
+                    $('off-reveal-name').innerText = state.offPlayers[state.offRevealIndex];
+                    $('off-reveal-hidden').style.display = 'flex';
+                    $('off-reveal-shown').style.display = 'none';
+                    $('btn-off-hold').style.display = 'block';
+                    $('btn-off-next').style.display = 'none';
+
+                    const shownDiv = $('off-reveal-shown');
+                    if(state.offRevealIndex === state.offGameData.imposterIndex) {
+                        shownDiv.innerHTML = `
+                            <i class="fa-solid fa-triangle-exclamation text-[5rem] text-rose-500 mb-4 drop-shadow-[0_0_20px_rgba(225,29,72,0.8)]"></i>
+                            <h3 class="text-3xl font-black text-rose-400">អ្នកគឺជា អ្នកបន្លំ!</h3>
+                            <p class="text-rose-200/70 text-sm mt-2">ព្យាយាមស្ដាប់គេ និងទាយពាក្យ</p>
+                        `;
+                    } else {
+                        shownDiv.innerHTML = `
+                            <p class="text-emerald-200 font-bold text-sm mb-2 uppercase tracking-widest">${state.offGameData.categoryName}</p>
+                            <div class="bg-emerald-950/50 border-2 border-emerald-500/50 rounded-2xl py-6 px-10">
+                                <h3 class="text-4xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">${state.offGameData.word}</h3>
+                            </div>
+                        `;
+                    }
+                },
+                showReveal: (e) => {
+                    if(e) e.preventDefault();
+                    $('off-reveal-hidden').style.display = 'none';
+                    $('off-reveal-shown').style.display = 'flex';
+                    $('btn-off-hold').innerText = "ប្រលែងដៃដើម្បីលាក់";
+                    $('btn-off-hold').className = "w-full mt-6 bg-slate-900 py-5 rounded-2xl font-bold text-xl border border-cyan-500 transition-all uppercase tracking-widest text-cyan-100";
+                    if(navigator.vibrate) navigator.vibrate(30);
+                },
+                hideReveal: (e) => {
+                    if(e) e.preventDefault();
+                    if($('off-reveal-hidden').style.display === 'none') {
+                        $('off-reveal-hidden').style.display = 'flex';
+                        $('off-reveal-shown').style.display = 'none';
+                        $('btn-off-hold').style.display = 'none';
+                        $('btn-off-next').style.display = 'block';
+                        if(state.offRevealIndex === state.offPlayers.length - 1) {
+                            $('btn-off-next').innerText = "ចាប់ផ្តើមការសន្ទនា";
+                        }
+                    }
+                },
+                nextPlayer: () => {
+                    if(state.offRevealIndex < state.offPlayers.length - 1) {
+                        state.offRevealIndex++;
+                        app.offline.setupRevealScreen();
+                    } else {
+                        app.offline.startDiscussion();
+                    }
+                },
+                startDiscussion: () => {
+                    $('off-discuss-cat-name').innerText = state.offGameData.categoryName;
+                    const wList = $('off-discuss-word-list');
+                    wList.innerHTML = '';
+                    state.offGameData.allWords.forEach(w => {
+                        wList.innerHTML += `<span class="bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-200">${w}</span>`;
+                    });
+                    app.nav('view-offline-discuss');
+                }
+            },
+
+            // --- ONLINE CONTROLLER ---
+            online: {
+                showJoinPrompt: () => {
+                    const name = $('on-my-name').value.trim();
+                    if(!name) return toast("សូមបញ្ចូលឈ្មោះរបស់អ្នក!");
+                    const code = prompt("សូមបញ្ចូលលេខកូដបន្ទប់ (Room Code 4 ខ្ទង់)៖");
+                    if(code && code.length === 4) {
+                        state.myName = name;
+                        app.online.joinRoom(code.toUpperCase());
+                    }
+                },
+                createRoom: () => {
+                    const name = $('on-my-name').value.trim();
+                    if(!name) return toast("សូមបញ្ចូលឈ្មោះរបស់អ្នក!");
+                    state.myName = name;
+                    
+                    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    state.roomCode = code;
+                    state.isHost = true;
+
+                    const roomRef = ref(db, `imposterRooms/${code}`);
+                    set(roomRef, {
+                        state: 'lobby',
+                        hostUid: state.myUid,
+                        createdAt: Date.now(),
+                        players: {
+                            [state.myUid]: { name: state.myName, isAlive: true }
+                        }
+                    }).then(() => {
+                        // Delete room on disconnect
+                        onDisconnect(roomRef).remove();
+                        app.online.listenToRoom();
+                        app.nav('view-online-lobby');
+                    });
+                },
+                joinRoom: (code) => {
+                    const roomRef = ref(db, `imposterRooms/${code}`);
+                    get(roomRef).then(snap => {
+                        if(snap.exists()) {
+                            if(snap.val().state !== 'lobby') return toast("បន្ទប់នេះកំពុងលេងហើយ!");
+                            
+                            state.roomCode = code;
+                            state.isHost = false;
+                            
+                            const myRef = ref(db, `imposterRooms/${code}/players/${state.myUid}`);
+                            set(myRef, { name: state.myName, isAlive: true }).then(() => {
+                                onDisconnect(myRef).remove();
+                                app.online.listenToRoom();
+                                app.nav('view-online-lobby');
+                            });
+                        } else {
+                            toast("រកមិនឃើញលេខកូដបន្ទប់នេះទេ!");
+                        }
+                    });
+                },
+                listenToRoom: () => {
+                    if(state.roomUnsubscribe) state.roomUnsubscribe();
+                    const roomRef = ref(db, `imposterRooms/${state.roomCode}`);
+                    
+                    state.roomUnsubscribe = onValue(roomRef, (snap) => {
+                        const data = snap.val();
+                        if(!data) {
+                            // Room closed
+                            toast("បន្ទប់ត្រូវបានបិទ!");
+                            app.nav('view-online-auth');
+                            state.roomCode = null;
+                            return;
+                        }
+                        
+                        state.roomData = data;
+                        app.online.syncUI();
+                    });
+                },
+                syncUI: () => {
+                    const data = state.roomData;
+                    
+                    // Route based on state
+                    if(data.state === 'lobby' && !$('view-online-lobby').classList.contains('active')) app.nav('view-online-lobby');
+                    if(data.state === 'playing' && !$('view-online-reveal').classList.contains('active')) app.online.setupReveal();
+                    if(data.state === 'discuss' && !$('view-online-discuss').classList.contains('active')) app.online.setupDiscuss();
+                    if(data.state === 'result' && !$('view-online-result').classList.contains('active')) app.online.setupResult();
+
+                    // Update Lobby
+                    if(data.state === 'lobby') {
+                        $('on-room-code').innerText = state.roomCode;
+                        const pList = $('on-player-list');
+                        pList.innerHTML = '';
+                        let count = 0;
+                        for(let uid in data.players) {
+                            count++;
+                            const p = data.players[uid];
+                            const isMe = uid === state.myUid;
+                            const isHost = uid === data.hostUid;
+                            pList.innerHTML += `
+                                <div class="bg-black/40 px-4 py-2 rounded-lg flex justify-between items-center border ${isMe ? 'border-emerald-500/50' : 'border-slate-700'}">
+                                    <span class="font-bold ${isMe ? 'text-emerald-300' : 'text-slate-300'}">${p.name} ${isMe ? '(អ្នក)' : ''}</span>
+                                    ${isHost ? '<i class="fa-solid fa-crown text-yellow-500"></i>' : ''}
+                                </div>
+                            `;
+                        }
+                        $('on-player-count').innerText = count;
+
+                        if(state.isHost) {
+                            $('on-host-controls').classList.remove('hidden');
+                            $('on-client-wait').classList.add('hidden');
+                            app.online.renderLobbyControls();
+                        } else {
+                            $('on-host-controls').classList.add('hidden');
+                            $('on-client-wait').classList.remove('hidden');
+                        }
+                    }
+                },
+                renderLobbyControls: () => {
+                    const catSelect = $('on-category-select');
+                    catSelect.innerHTML = '';
+                    const allCats = getAllCategories();
+                    for(let key in allCats) {
+                        catSelect.innerHTML += `<option value="${key}">${allCats[key].name}</option>`;
+                    }
+                },
+                startGame: () => {
+                    const playerUids = Object.keys(state.roomData.players);
+                    if(playerUids.length < 3) return toast("ត្រូវការយ៉ាងតិច ៣នាក់!");
+
+                    const catKey = $('on-category-select').value;
+                    const category = getAllCategories()[catKey];
+                    const wordList = Object.values(category.words);
+                    
+                    const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+                    const randomImposterUid = playerUids[Math.floor(Math.random() * playerUids.length)];
+
+                    update(ref(db, `imposterRooms/${state.roomCode}`), {
+                        state: 'playing',
+                        game: {
+                            word: randomWord,
+                            imposterUid: randomImposterUid,
+                            categoryKey: catKey,
+                            categoryName: category.name,
+                            allWords: wordList
+                        }
+                    });
+                },
+                setupReveal: () => {
+                    app.nav('view-online-reveal');
+                    $('on-my-name-display').innerText = state.myName;
+                    $('on-reveal-hidden').style.display = 'flex';
+                    $('on-reveal-shown').style.display = 'none';
+                    $('btn-on-hold').style.display = 'block';
+                    $('btn-on-hold').innerText = "សង្កត់ទីនេះ";
+                    
+                    if(state.isHost) {
+                        $('on-host-next-controls').classList.add('hidden');
+                        $('on-client-reveal-wait').classList.add('hidden');
+                    } else {
+                        $('on-host-next-controls').classList.add('hidden');
+                        $('on-client-reveal-wait').classList.add('hidden');
+                    }
+
+                    const game = state.roomData.game;
+                    const shownDiv = $('on-reveal-shown');
+                    
+                    if(state.myUid === game.imposterUid) {
+                        shownDiv.innerHTML = `
+                            <i class="fa-solid fa-triangle-exclamation text-6xl text-rose-500 mb-4 drop-shadow-[0_0_20px_rgba(225,29,72,0.8)] animate-pulse"></i>
+                            <h3 class="text-4xl font-black text-rose-400">អ្នកគឺជា អ្នកបន្លំ!</h3>
+                        `;
+                    } else {
+                        shownDiv.innerHTML = `
+                            <p class="text-emerald-200 font-bold text-sm mb-2 uppercase tracking-widest">${game.categoryName}</p>
+                            <div class="bg-emerald-950/50 border-2 border-emerald-500/50 rounded-2xl py-6 px-10 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                                <h3 class="text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">${game.word}</h3>
+                            </div>
+                        `;
+                    }
+                },
+                showReveal: (e) => {
+                    if(e) e.preventDefault();
+                    $('on-reveal-hidden').style.display = 'none';
+                    $('on-reveal-shown').style.display = 'flex';
+                    $('btn-on-hold').innerText = "ប្រលែងដៃដើម្បីលាក់";
+                    $('btn-on-hold').className = "w-full mt-6 bg-slate-900 py-5 rounded-2xl font-bold text-xl border border-emerald-500 transition-all uppercase tracking-widest text-emerald-100";
+                    if(navigator.vibrate) navigator.vibrate(30);
+                },
+                hideReveal: (e) => {
+                    if(e) e.preventDefault();
+                    if($('on-reveal-hidden').style.display === 'none') {
+                        $('on-reveal-hidden').style.display = 'flex';
+                        $('on-reveal-shown').style.display = 'none';
+                        $('btn-on-hold').style.display = 'none';
+                        
+                        // Show next buttons
+                        if(state.isHost) $('on-host-next-controls').classList.remove('hidden');
+                        else $('on-client-reveal-wait').classList.remove('hidden');
+                    }
+                },
+                advanceToDiscuss: () => {
+                    update(ref(db, `imposterRooms/${state.roomCode}`), { state: 'discuss' });
+                },
+                setupDiscuss: () => {
+                    app.nav('view-online-discuss');
+                    const game = state.roomData.game;
+                    $('on-discuss-cat-name').innerText = game.categoryName;
+                    const wList = $('on-discuss-word-list');
+                    wList.innerHTML = '';
+                    game.allWords.forEach(w => {
+                        wList.innerHTML += `<span class="bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-200">${w}</span>`;
+                    });
+
+                    if(state.isHost) $('on-host-res-controls').classList.remove('hidden');
+                    else $('on-host-res-controls').classList.add('hidden');
+                },
+                advanceToResult: () => {
+                    update(ref(db, `imposterRooms/${state.roomCode}`), { state: 'result' });
+                },
+                setupResult: () => {
+                    app.nav('view-online-result');
+                    const game = state.roomData.game;
+                    const impostorName = state.roomData.players[game.imposterUid].name;
+                    
+                    $('on-res-imposter').innerText = impostorName;
+                    $('on-res-word').innerText = game.word;
+
+                    if(state.isHost) {
+                        $('on-host-end-controls').classList.remove('hidden');
+                        $('on-client-end-controls').classList.add('hidden');
+                    } else {
+                        $('on-host-end-controls').classList.add('hidden');
+                        $('on-client-end-controls').classList.remove('hidden');
+                    }
+                },
+                backToLobby: () => {
+                    update(ref(db, `imposterRooms/${state.roomCode}`), { state: 'lobby', game: null });
+                },
+                leaveRoom: () => {
+                    if(state.isHost) {
+                        remove(ref(db, `imposterRooms/${state.roomCode}`));
+                    } else {
+                        remove(ref(db, `imposterRooms/${state.roomCode}/players/${state.myUid}`));
+                        if(state.roomUnsubscribe) state.roomUnsubscribe();
+                        state.roomCode = null;
+                        app.nav('view-home');
+                    }
+                }
             }
         };
 
-        // Auto login check if token provided
-        window.onload = () => {
-            // PWA / iOS visual adjustments
-            document.body.style.minHeight = window.innerHeight + 'px';
-        };
+        // Boot
+        window.onload = app.init;
 
     </script>
 </body>
