@@ -6,28 +6,32 @@
     
     <!-- PWA / App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#f0f4f8">
     <title>GAME KON KHMER</title>
     
     <!-- Inline Web App Manifest for Home Screen Install -->
-    <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"GAME KON KHMER","short_name":"Kon Khmer","start_url":".","display":"fullscreen","background_color":"#f0f4f8","theme_color":"#f0f4f8","icons":[{"src":"https://placehold.co/192x192/3b82f6/ffffff?text=GK","sizes":"192x192","type":"image/png"},{"src":"https://placehold.co/512x512/3b82f6/ffffff?text=GK","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"GAME KON KHMER","short_name":"Kon Khmer","start_url":".","display":"standalone","orientation":"portrait","background_color":"#f0f4f8","theme_color":"#f0f4f8","icons":[{"src":"https://placehold.co/192x192/3b82f6/ffffff?text=GK","sizes":"192x192","type":"image/png"},{"src":"https://placehold.co/512x512/3b82f6/ffffff?text=GK","sizes":"512x512","type":"image/png"}]}'>
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/3b82f6/ffffff?text=GK">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Righteous&family=Rubik:wght@400;600;800&display=swap');
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
             background-color: #f0f4f8; /* Soft blue-gray background from Old UI */
             font-family: 'Rubik', sans-serif;
             touch-action: none; /* Crucial for multi-touch games */
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none; /* Block long-press image save menus on iOS */
+            overscroll-behavior: none; /* Block pull-to-refresh on mobile */
         }
 
         #game-container {
@@ -36,6 +40,9 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            /* Safe area for modern phones with notches */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* UI Layer that lets touches pass through to the canvas */
@@ -756,6 +763,13 @@ function gameLoop(timestamp) {
 
 // Control Flow
 document.getElementById('start-btn').addEventListener('click', () => {
+    // Force true Fullscreen on Android/Desktop when Play is clicked
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen(); // Safari
+    }
+
     document.getElementById('start-screen').classList.remove('active');
     startGame();
 });
@@ -764,6 +778,9 @@ document.getElementById('next-level-btn').addEventListener('click', () => {
     document.getElementById('game-over-screen').classList.remove('active');
     startGame();
 });
+
+// Prevent right-click and long-press context menus globally
+window.addEventListener('contextmenu', e => e.preventDefault());
 
 function startGame() {
     generateRandomMap();
