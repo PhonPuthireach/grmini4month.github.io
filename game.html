@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA / App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>GAME KON KHMER</title>
+    
+    <!-- Inline Web App Manifest for Home Screen Install -->
+    <link rel="manifest" href='data:application/manifest+json;utf8,{"name":"GAME KON KHMER","short_name":"Kon Khmer","start_url":".","display":"fullscreen","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://placehold.co/192x192/032ea1/ffffff?text=GK","sizes":"192x192","type":"image/png"},{"src":"https://placehold.co/512x512/032ea1/ffffff?text=GK","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/032ea1/ffffff?text=GK">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rubik:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a; /* Slate 900 */
+            font-family: 'Rubik', sans-serif;
+            touch-action: none; /* Crucial for multi-touch games */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* UI Layer that lets touches pass through to the canvas */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .player-bar {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        /* Player 2 is rotated so the person opposite can read it */
+        .player-2-bar {
+            transform: rotate(180deg);
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+        }
+
+        .player-1-bar {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0));
+        }
+
+        .game-title {
+            font-family: 'Black Ops One', cursive;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-shadow: 0px 4px 10px rgba(0,0,0,0.8);
+        }
+
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            padding: 0.5rem 1.2rem;
+            border-radius: 999px;
+            font-weight: 800;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            flex-grow: 1;
+            touch-action: none;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 2px solid #334155;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            width: 450px;
+            color: white;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #032ea1, #e00025);
+            color: white;
+            font-family: 'Black Ops One', cursive;
+            font-size: 1.5rem;
+            padding: 1.2rem 2rem;
+            border-radius: 12px;
+            border: 2px solid white;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+            margin-top: 1.5rem;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-play:active {
+            transform: scale(0.95);
+        }
+
+        .team-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.5); }
+        .bg-khmer-blue { background-color: #032ea1; }
+        .bg-khmer-red { background-color: #e00025; }
+        .text-khmer-blue { color: #4da6ff; }
+        .text-khmer-red { color: #ff4d4d; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <!-- Player 2 UI (Top, Rotated 180deg) -->
+        <div class="player-bar player-2-bar">
+            <div class="game-title text-khmer-red">GAME KON KHMER</div>
+            <div class="stat-badge">
+                <span class="team-dot bg-khmer-red"></span> <span id="p2-nodes">1</span>
+            </div>
+        </div>
+        
+        <!-- Player 1 UI (Bottom, Normal) -->
+        <div class="player-bar player-1-bar">
+            <div class="game-title text-khmer-blue">GAME KON KHMER</div>
+            <div class="stat-badge">
+                <span class="team-dot bg-khmer-blue"></span> <span id="p1-nodes">1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="modal-overlay active">
+        <div class="modal-content">
+            <h1 class="font-['Black_Ops_One'] text-5xl mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-red-500">KON KHMER</h1>
+            <p class="text-gray-300 mb-6 text-lg font-bold">2 PLAYER BATTLE</p>
+            
+            <div class="text-left bg-slate-800 border border-slate-600 p-4 rounded-xl mb-6 text-sm text-gray-200">
+                <p class="mb-2 text-center text-yellow-400 font-bold uppercase">Put phone on table between you!</p>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="team-dot bg-khmer-blue"></span> <strong>Player 1 (Bottom):</strong> Drag from Blue bases.
+                </div>
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="team-dot bg-khmer-red"></span> <strong>Player 2 (Top):</strong> Drag from Red bases.
+                </div>
+                <ul class="list-disc pl-5 text-gray-400">
+                    <li>Multitouch enabled: Both can play at once!</li>
+                    <li>Capture neutral (white) nodes to grow army.</li>
+                    <li>Wipe out the enemy to win!</li>
+                </ul>
+            </div>
+
+            <button id="start-btn" class="btn-play">START BATTLE</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="modal-overlay">
+        <div class="modal-content">
+            <h1 id="end-title" class="font-['Black_Ops_One'] text-5xl mb-2">VICTORY</h1>
+            <p id="end-message" class="text-gray-300 mb-6 text-xl">Player Wins!</p>
+            <button id="next-level-btn" class="btn-play">REMATCH</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game Configuration
+const CONFIG = {
+    FPS: 60,
+    NODE_MIN_RADIUS: 25,
+    NODE_MAX_RADIUS: 50,
+    NODE_REGEN_RATE: 0.6, // Troops per second
+    TROOP_SPEED: 100, // Faster troops for exciting 1v1
+    TROOP_RADIUS: 6,
+    ATTACK_RATIO: 0.5, // Send 50% of troops
+    COLORS: {
+        P1: '#032ea1',      // Khmer Blue
+        P1_DARK: '#021d68',
+        P2: '#e00025',      // Khmer Red
+        P2_DARK: '#8b0017',
+        NEUTRAL: '#cbd5e1', // Silver/White
+        NEUTRAL_DARK: '#94a3b8',
+        TEXT: '#ffffff',
+        BG: '#0f172a'       // Slate 900
+    },
+    TEAMS: {
+        NEUTRAL: 0,
+        P1: 1, // Bottom Player
+        P2: 2  // Top Player
+    }
+};
+
+// Game State
+let nodes = [];
+let troops = [];
+let gameActive = false;
+let lastTime = 0;
+
+// Multitouch State Tracking
+// Map touch identifier -> { startNode, currentX, currentY, team }
+let activeTouches = {}; 
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Node {
+    constructor(x, y, radius, team, initialCount, capacity) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.team = team;
+        this.count = initialCount;
+        this.capacity = capacity;
+        this.regenTimer = 0;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+    }
+
+    getColor() {
+        if (this.team === CONFIG.TEAMS.P1) return CONFIG.COLORS.P1;
+        if (this.team === CONFIG.TEAMS.P2) return CONFIG.COLORS.P2;
+        return CONFIG.COLORS.NEUTRAL;
+    }
+
+    getDarkColor() {
+        if (this.team === CONFIG.TEAMS.P1) return CONFIG.COLORS.P1_DARK;
+        if (this.team === CONFIG.TEAMS.P2) return CONFIG.COLORS.P2_DARK;
+        return CONFIG.COLORS.NEUTRAL_DARK;
+    }
+
+    update(dt) {
+        if (this.team !== CONFIG.TEAMS.NEUTRAL && this.count < this.capacity) {
+            this.regenTimer += dt;
+            if (this.regenTimer >= 1 / CONFIG.NODE_REGEN_RATE) {
+                this.count++;
+                this.regenTimer = 0;
+            }
+        }
+        this.pulsePhase += dt * 3; // For pulsating effect
+    }
+
+    draw(ctx) {
+        // Base Shadow
+        ctx.beginPath();
+        ctx.arc(this.x, this.y + 6, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fill();
+
+        // Check if currently being touched/dragged from
+        let isBeingDragged = Object.values(activeTouches).some(t => t.startNode === this);
+        let pulseScale = isBeingDragged ? 1.05 + Math.sin(this.pulsePhase) * 0.03 : 1;
+
+        // Dark Base 3D effect
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * pulseScale, 0, Math.PI * 2);
+        ctx.fillStyle = this.getDarkColor();
+        ctx.fill();
+
+        // Main colored top
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 4, this.radius * 0.95 * pulseScale, 0, Math.PI * 2);
+        ctx.fillStyle = this.getColor();
+        ctx.fill();
+
+        // Outline if interacting
+        if (isBeingDragged) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y - 2, this.radius * pulseScale + 6, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([6, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Draw Troop Count
+        ctx.fillStyle = CONFIG.COLORS.TEXT;
+        ctx.font = `900 ${Math.max(16, this.radius * 0.65)}px 'Rubik'`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        
+        // P2's numbers should be rotated 180 degrees so they can read it!
+        ctx.save();
+        ctx.translate(this.x, this.y - 4);
+        if (this.team === CONFIG.TEAMS.P2) {
+            ctx.rotate(Math.PI); // Rotate 180 degrees
+        }
+        ctx.fillText(Math.floor(this.count), 0, 0);
+        ctx.restore();
+        
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+    }
+
+    isPointInside(x, y) {
+        const dx = this.x - x;
+        const dy = this.y - y;
+        return dx * dx + dy * dy <= this.radius * this.radius + 10; // slightly larger hit area for touch
+    }
+}
+
+class Troop {
+    constructor(startX, startY, targetNode, team) {
+        this.x = startX;
+        this.y = startY;
+        this.targetNode = targetNode;
+        this.team = team;
+        this.speed = CONFIG.TROOP_SPEED * (0.85 + Math.random() * 0.3); // Speed variance for swarm effect
+        
+        // Random offset spread
+        const angle = Math.random() * Math.PI * 2;
+        const offset = Math.random() * 15;
+        this.x += Math.cos(angle) * offset;
+        this.y += Math.sin(angle) * offset;
+    }
+
+    getColor() {
+        if (this.team === CONFIG.TEAMS.P1) return CONFIG.COLORS.P1;
+        if (this.team === CONFIG.TEAMS.P2) return CONFIG.COLORS.P2;
+        return CONFIG.COLORS.NEUTRAL;
+    }
+
+    update(dt) {
+        const dx = this.targetNode.x - this.x;
+        const dy = this.targetNode.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= this.targetNode.radius) {
+            return true; // Reached target
+        }
+
+        const vx = (dx / dist) * this.speed;
+        const vy = (dy / dist) * this.speed;
+
+        this.x += vx * dt;
+        this.y += vy * dt;
+        return false;
+    }
+
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, CONFIG.TROOP_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = this.getColor();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Give them a slight trail/shadow
+        ctx.beginPath();
+        ctx.arc(this.x - (this.targetNode.x - this.x)*0.05, this.y - (this.targetNode.y - this.y)*0.05, CONFIG.TROOP_RADIUS * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+    }
+}
+
+function sendTroops(source, target) {
+    if (source === target || source.count <= 1) return;
+
+    const amountToSend = Math.floor(source.count * CONFIG.ATTACK_RATIO);
+    if (amountToSend === 0) return;
+
+    source.count -= amountToSend;
+
+    for (let i = 0; i < amountToSend; i++) {
+        setTimeout(() => {
+            if (gameActive) {
+                troops.push(new Troop(source.x, source.y, target, source.team));
+            }
+        }, i * 35); // Stagger troop spawning
+    }
+}
+
+function handleTroopArrival(troop, index) {
+    troops.splice(index, 1);
+    const target = troop.targetNode;
+    
+    if (target.team === troop.team) {
+        // Reinforce
+        if (target.count < target.capacity * 1.5) { // Allow slight overcap on reinforce
+            target.count++;
+        }
+    } else {
+        // Attack
+        if (target.count > 0) {
+            target.count--;
+        } else {
+            // Conquer! Node changes team
+            target.team = troop.team;
+            target.count = 1;
+        }
+    }
+}
+
+function generateSymmetricLevel() {
+    nodes = [];
+    troops = [];
+    activeTouches = {};
+    
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const padding = 50;
+    
+    const isValidPos = (x, y, r, currentNodes) => {
+        if (x - r < padding || x + r > cw - padding || y - r < padding + 80 || y + r > ch - padding - 80) return false;
+        for (let n of currentNodes) {
+            const dist = Math.hypot(n.x - x, n.y - y);
+            if (dist < n.radius + r + 30) return false; // Min 30px gap
+        }
+        return true;
+    };
+
+    // 1. Central Mega-Node (Neutral) - High capacity, high start count, right in the middle
+    nodes.push(new Node(cw/2, ch/2, CONFIG.NODE_MAX_RADIUS + 10, CONFIG.TEAMS.NEUTRAL, 30, 100));
+
+    // 2. Player Bases (Symmetrical top/bottom)
+    const baseYOffset = ch * 0.35;
+    nodes.push(new Node(cw/2, ch/2 + baseYOffset, CONFIG.NODE_MAX_RADIUS, CONFIG.TEAMS.P1, 40, 150)); // Bottom
+    nodes.push(new Node(cw/2, ch/2 - baseYOffset, CONFIG.NODE_MAX_RADIUS, CONFIG.TEAMS.P2, 40, 150)); // Top
+
+    // 3. Generate Random Neutral nodes on Bottom Half, mirror to Top Half
+    let attempts = 0;
+    let halfNodes = [];
+    
+    // We want about 6-8 mirrored pairs (12-16 neutral nodes total)
+    while (halfNodes.length < 7 && attempts < 150) {
+        attempts++;
+        const r = CONFIG.NODE_MIN_RADIUS + Math.random() * (CONFIG.NODE_MAX_RADIUS - CONFIG.NODE_MIN_RADIUS - 5);
+        
+        // Pick point in bottom half (excluding exact center band)
+        const x = Math.random() * cw;
+        const y = (ch / 2) + 40 + Math.random() * (ch/2 - 40); 
+        
+        // Temp array to check both original and mirrored positions
+        let tempNodes = [...nodes, ...halfNodes]; 
+        
+        // Mirrored coordinates (Point Reflection across center)
+        const mx = cw - x;
+        const my = ch - y;
+
+        // Ensure BOTH the point and its mirror are valid against all existing nodes
+        if (isValidPos(x, y, r, tempNodes) && isValidPos(mx, my, r, tempNodes)) {
+            const capacity = Math.floor(20 + r);
+            const startCount = Math.floor(5 + Math.random() * 10);
+            
+            // Add original to halfNodes
+            halfNodes.push(new Node(x, y, r, CONFIG.TEAMS.NEUTRAL, startCount, capacity));
+            // Add mirror immediately to temp checking list for next iterations
+            halfNodes.push(new Node(mx, my, r, CONFIG.TEAMS.NEUTRAL, startCount, capacity));
+            attempts = 0;
+        }
+    }
+    
+    nodes.push(...halfNodes);
+}
+
+function getNodeAt(x, y) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+        if (nodes[i].isPointInside(x, y)) return nodes[i];
+    }
+    return null;
+}
+
+// Support both Mouse (for desktop testing) and Touch (for actual gameplay)
+function startDrag(id, x, y) {
+    if (!gameActive) return;
+    const node = getNodeAt(x, y);
+    // Allow dragging ONLY if the node belongs to P1 or P2
+    if (node && (node.team === CONFIG.TEAMS.P1 || node.team === CONFIG.TEAMS.P2)) {
+        activeTouches[id] = { startNode: node, x: x, y: y, team: node.team };
+    }
+}
+
+function moveDrag(id, x, y) {
+    if (activeTouches[id]) {
+        activeTouches[id].x = x;
+        activeTouches[id].y = y;
+    }
+}
+
+function endDrag(id, x, y) {
+    if (activeTouches[id]) {
+        const dragData = activeTouches[id];
+        const targetNode = getNodeAt(x, y);
+        
+        // Ensure starting node STILL belongs to the player who started the drag (in case it was captured mid-drag)
+        if (targetNode && targetNode !== dragData.startNode && dragData.startNode.team === dragData.team) {
+            sendTroops(dragData.startNode, targetNode);
+        }
+        delete activeTouches[id];
+    }
+}
+
+// Touch Events
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        startDrag(t.identifier, t.clientX, t.clientY);
+    }
+}, {passive: false});
+
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        moveDrag(t.identifier, t.clientX, t.clientY);
+    }
+}, {passive: false});
+
+canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        endDrag(t.identifier, t.clientX, t.clientY);
+    }
+}, {passive: false});
+
+canvas.addEventListener('touchcancel', e => {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        delete activeTouches[e.changedTouches[i].identifier];
+    }
+}, {passive: false});
+
+// Mouse Fallbacks (Maps to ID 'mouse')
+canvas.addEventListener('mousedown', e => startDrag('mouse', e.clientX, e.clientY));
+canvas.addEventListener('mousemove', e => moveDrag('mouse', e.clientX, e.clientY));
+canvas.addEventListener('mouseup', e => endDrag('mouse', e.clientX, e.clientY));
+canvas.addEventListener('mouseleave', () => { delete activeTouches['mouse']; });
+
+function updateUI() {
+    let p1Nodes = 0;
+    let p2Nodes = 0;
+    
+    nodes.forEach(n => {
+        if (n.team === CONFIG.TEAMS.P1) p1Nodes++;
+        if (n.team === CONFIG.TEAMS.P2) p2Nodes++;
+    });
+
+    document.getElementById('p1-nodes').innerText = p1Nodes;
+    document.getElementById('p2-nodes').innerText = p2Nodes;
+}
+
+function checkWinCondition() {
+    let p1Nodes = 0, p2Nodes = 0;
+    nodes.forEach(n => {
+        if (n.team === CONFIG.TEAMS.P1) p1Nodes++;
+        if (n.team === CONFIG.TEAMS.P2) p2Nodes++;
+    });
+
+    let p1Troops = troops.filter(t => t.team === CONFIG.TEAMS.P1).length;
+    let p2Troops = troops.filter(t => t.team === CONFIG.TEAMS.P2).length;
+
+    // A player loses if they have no nodes AND no troops currently traveling
+    if (p1Nodes === 0 && p1Troops === 0) endGame(CONFIG.TEAMS.P2);
+    else if (p2Nodes === 0 && p2Troops === 0) endGame(CONFIG.TEAMS.P1);
+}
+
+function endGame(winnerTeam) {
+    gameActive = false;
+    const overlay = document.getElementById('game-over-screen');
+    const title = document.getElementById('end-title');
+    const message = document.getElementById('end-message');
+    
+    // Clear active touches
+    activeTouches = {};
+
+    if (winnerTeam === CONFIG.TEAMS.P1) {
+        title.className = "font-['Black_Ops_One'] text-5xl mb-2 text-blue-500 drop-shadow-lg";
+        title.innerText = "BLUE WINS!";
+        message.innerText = "Player 1 (Bottom) dominated the map.";
+    } else {
+        title.className = "font-['Black_Ops_One'] text-5xl mb-2 text-red-500 drop-shadow-lg";
+        title.innerText = "RED WINS!";
+        message.innerText = "Player 2 (Top) dominated the map.";
+    }
+
+    overlay.classList.add('active');
+}
+
+function drawBackground() {
+    // Dark Space/Grid Background
+    ctx.fillStyle = CONFIG.COLORS.BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Subdued grid pattern
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    const gridSize = 50;
+    
+    ctx.beginPath();
+    for(let x = 0; x < canvas.width; x += gridSize) {
+        ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+    }
+    for(let y = 0; y < canvas.height; y += gridSize) {
+        ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+    }
+    ctx.stroke();
+
+    // Center divider subtly indicating halves
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height/2);
+    ctx.lineTo(canvas.width, canvas.height/2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([20, 20]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawDragLines() {
+    Object.values(activeTouches).forEach(drag => {
+        const start = drag.startNode;
+        
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(drag.x, drag.y);
+        
+        // Color line based on team
+        ctx.strokeStyle = drag.team === CONFIG.TEAMS.P1 ? 'rgba(3, 46, 161, 0.7)' : 'rgba(224, 0, 37, 0.7)';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([15, 10]);
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Arrow head
+        const dx = drag.x - start.x;
+        const dy = drag.y - start.y;
+        const angle = Math.atan2(dy, dx);
+        
+        ctx.beginPath();
+        ctx.moveTo(drag.x, drag.y);
+        ctx.lineTo(drag.x - 20 * Math.cos(angle - Math.PI/6), drag.y - 20 * Math.sin(angle - Math.PI/6));
+        ctx.lineTo(drag.x - 20 * Math.cos(angle + Math.PI/6), drag.y - 20 * Math.sin(angle + Math.PI/6));
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
+    });
+}
+
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // Cap dt to prevent massive jumps
+    lastTime = timestamp;
+
+    if (gameActive) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        // Update Nodes
+        nodes.forEach(node => node.update(dt));
+        
+        // Draw interaction lines underneath nodes but over background
+        drawDragLines();
+
+        // Draw Nodes
+        nodes.forEach(node => node.draw(ctx));
+
+        // Update & Draw Troops
+        for (let i = troops.length - 1; i >= 0; i--) {
+            const troop = troops[i];
+            const reachedTarget = troop.update(dt);
+            if (reachedTarget) {
+                handleTroopArrival(troop, i);
+            } else {
+                troop.draw(ctx);
+            }
+        }
+
+        updateUI();
+        
+        // Periodic win check (every ~60 frames)
+        if (Math.random() < 0.05) checkWinCondition();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Game Flow Events
+document.getElementById('start-btn').addEventListener('click', () => {
+    document.getElementById('start-screen').classList.remove('active');
+    startGame();
+});
+
+document.getElementById('next-level-btn').addEventListener('click', () => {
+    document.getElementById('game-over-screen').classList.remove('active');
+    startGame();
+});
+
+function startGame() {
+    generateSymmetricLevel();
+    updateUI();
+    lastTime = 0;
+    gameActive = true;
+}
+
+// Render background immediately
+drawBackground();
+requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>
