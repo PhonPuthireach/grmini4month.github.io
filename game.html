@@ -5,19 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
-    <title>Cambodia State Wars</title>
+    <meta name="theme-color" content="#090d16">
+    <title>Cambodia State Wars - Multiplayer</title>
     
-    <!-- PWA Manifest Injection (handled in JS below) -->
+    <!-- Dynamic Manifest Injection for PWA Fullscreen Support -->
     <link rel="manifest" id="pwa-manifest">
 
+    <!-- Tailwind CSS & D3.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-ocean: #0f172a; /* Deep modern ocean */
+            --bg-dark: #090d16;
+            --accent-glow: rgba(59, 130, 246, 0.15);
         }
         body, html {
             margin: 0;
@@ -25,12 +27,12 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: var(--bg-ocean);
+            background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.3) 0%, transparent 80%),
-                repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 15px);
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, var(--bg-dark) 100%),
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 12px);
             font-family: 'Poppins', sans-serif;
-            touch-action: none; /* Crucial: Disables browser default zoom/pan */
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
@@ -39,65 +41,206 @@
             width: 100%;
             height: 100%;
         }
-        /* Glassmorphism UI */
+        /* Beautiful Premium Glassmorphism */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            background: rgba(13, 18, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+            outline: none;
         }
         .ui-layer { pointer-events: none; }
         .interactive { pointer-events: auto; }
         
-        /* App/PWA Safe Areas */
         .safe-padding {
             padding-top: env(safe-area-inset-top, 16px);
             padding-bottom: env(safe-area-inset-bottom, 16px);
             padding-left: env(safe-area-inset-left, 16px);
             padding-right: env(safe-area-inset-right, 16px);
         }
+        
+        /* Custom Animated Grid Background */
+        .grid-anim {
+            position: absolute;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            pointer-events: none;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
 
-    <div class="fixed inset-0 z-10 flex flex-col justify-between safe-padding ui-layer">
+    <div class="grid-anim"></div>
+
+    <!-- Firebase SDK Imports (v11.6.1 Compatible) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Fallback or User Provided Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyChnxEeg3la_5PA2FlzgRFsSoyIZ9CRpzE",
+            authDomain: "sophansystem.firebaseapp.com",
+            databaseURL: "https://sophansystem-default-rtdb.firebaseio.com",
+            projectId: "sophansystem",
+            storageBucket: "sophansystem.firebasestorage.app",
+            messagingSenderId: "397333014123",
+            appId: "1:397333014123:web:0a4e064932624d1f44b32e",
+            measurementId: "G-F0B4EHNKHV"
+        };
+
+        // Initialize Firebase Apps
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Expose globally to allow our game scripts to interact
+        window.db = db;
+        window.auth = auth;
+        window.fbImports = { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, signInAnonymously, signInWithCustomToken };
         
-        <!-- Top Bar -->
-        <div class="flex justify-between items-start gap-4 p-2 md:p-4">
-            <div class="glass-panel rounded-2xl p-3 md:p-4 px-6">
-                <h1 class="text-2xl md:text-3xl font-black text-white drop-shadow-lg tracking-wider" style="line-height: 1;">CAMBODIA<br><span class="text-blue-400">WARS</span></h1>
-                <div class="mt-2 inline-block bg-blue-500/20 border border-blue-400/50 rounded-full px-3 py-1">
-                    <p class="text-blue-200 font-bold text-xs md:text-sm drop-shadow-sm uppercase tracking-widest" id="levelDisplay">Level 1</p>
+        // Trigger initialization event
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+
+    <!-- Menu & Lobby Screens -->
+    <div id="mainMenu" class="fixed inset-0 z-30 flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl text-center border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 tracking-wider mb-2">
+                CAMBODIA WARS
+            </h1>
+            <p class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-8">Real-time Multiplayer Strategy</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-left text-xs text-slate-400 mb-1 pl-1 font-bold">NICKNAME</label>
+                    <input type="text" id="nicknameInput" maxlength="15" placeholder="Enter Commander Name" class="glass-input w-full px-5 py-3 rounded-2xl text-center font-bold text-lg">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 pt-4">
+                    <button id="hostBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg transition transform hover:-translate-y-0.5 active:scale-95 text-sm uppercase">
+                        Host Match
+                    </button>
+                    <button id="joinBtn" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-4 rounded-2xl border border-slate-700 shadow-lg transition transform hover:-translate-y-0.5 active:scale-95 text-sm uppercase">
+                        Join Match
+                    </button>
+                </div>
+
+                <div id="joinSection" class="hidden pt-4 space-y-3 border-t border-white/5">
+                    <input type="text" id="roomCodeInput" placeholder="ENTER 4-DIGIT CODE" class="glass-input w-full px-4 py-3 rounded-2xl text-center font-black tracking-widest text-xl">
+                    <button id="confirmJoinBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-2xl shadow-md transition transform active:scale-95 text-xs uppercase">
+                        Enter Campaign
+                    </button>
                 </div>
             </div>
             
-            <div class="flex flex-col gap-2 interactive">
-                <button id="centerBtn" class="glass-panel hover:bg-white/20 text-white font-bold w-12 h-12 rounded-full shadow-lg transition-transform active:scale-90 flex justify-center items-center" title="Center Map">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4zM9 9h6v6H9z"></path></svg>
+            <div id="connectionStatus" class="mt-6 text-xs font-semibold text-slate-500">Connecting to strategic database...</div>
+        </div>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobbyScreen" class="fixed inset-0 z-30 hidden items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Campaign Lobby</h2>
+                    <p class="text-xs text-slate-400">Waiting for players...</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs uppercase tracking-widest text-blue-400 font-bold block">Room Code</span>
+                    <button id="copyCodeBtn" class="text-xl font-black text-white hover:text-blue-300 transition flex items-center gap-1">
+                        <span id="roomCodeDisplay">----</span>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Player List -->
+            <div class="space-y-3 mb-8" id="playerList">
+                <!-- Populated Dynamically -->
+            </div>
+
+            <div class="flex gap-4">
+                <button id="leaveLobbyBtn" class="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 rounded-2xl transition active:scale-95 text-xs uppercase">
+                    Leave
                 </button>
-                <button id="restartBtn" class="glass-panel hover:bg-white/20 text-white font-bold w-12 h-12 rounded-full shadow-lg transition-transform active:scale-90 flex justify-center items-center" title="Restart Level">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <button id="startGameBtn" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition transform active:scale-95 text-xs uppercase hidden">
+                    Deploy Forces (Host)
+                </button>
+                <div id="waitStartMsg" class="flex-1 text-center py-3.5 text-slate-400 text-xs font-semibold uppercase tracking-wider bg-white/5 rounded-2xl">
+                    Waiting for Host...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimalist HUD (Clean Game Play Screen) -->
+    <div id="gameHUD" class="fixed inset-0 z-10 flex flex-col justify-between safe-padding ui-layer hidden">
+        <!-- Top HUD Banner -->
+        <div class="w-full flex justify-between items-center gap-4">
+            <!-- Minimal glass panel representing player info -->
+            <div class="glass-panel rounded-2xl px-5 py-3 flex items-center gap-3 interactive">
+                <div id="playerColorIndicator" class="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                <div>
+                    <div id="hudPlayerName" class="text-white font-bold text-sm tracking-wide leading-none">Commander</div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Your Territory</div>
+                </div>
+            </div>
+
+            <!-- Territory Balance Bar (Territory ownership visually) -->
+            <div class="flex-1 max-w-xs md:max-w-md h-2 rounded-full overflow-hidden bg-slate-800 flex shadow-inner">
+                <div id="bar-player" class="h-full bg-blue-500 transition-all duration-500" style="width: 20%"></div>
+                <div id="bar-ai1" class="h-full bg-red-500 transition-all duration-500" style="width: 20%"></div>
+                <div id="bar-ai2" class="h-full bg-emerald-500 transition-all duration-500" style="width: 20%"></div>
+                <div id="bar-ai3" class="h-full bg-amber-500 transition-all duration-500" style="width: 20%"></div>
+                <div id="bar-ai4" class="h-full bg-purple-500 transition-all duration-500" style="width: 20%"></div>
+                <div id="bar-neutral" class="h-full bg-slate-600 transition-all duration-500" style="width: 20%"></div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="flex gap-2 interactive">
+                <button id="recenterCameraBtn" class="glass-panel hover:bg-white/15 text-white w-10 h-10 rounded-xl flex items-center justify-center transition active:scale-90" title="Recenter Map">
+                    <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+                <button id="leaveGameBtn" class="glass-panel hover:bg-red-500/20 text-red-400 border border-red-500/20 w-10 h-10 rounded-xl flex items-center justify-center transition active:scale-90" title="Exit Match">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </button>
             </div>
         </div>
-        
-        <!-- Bottom Instructions -->
-        <div class="text-center p-4">
-            <div class="inline-block glass-panel rounded-full px-6 py-3">
-                <p class="text-white font-semibold drop-shadow-md text-xs md:text-sm">
-                    Drag from <span class="text-blue-400 font-black">BLUE</span> to attack • Pinch to <span class="text-yellow-300 font-bold">Zoom</span> • Drag water to <span class="text-green-300 font-bold">Pan</span>
+
+        <!-- Instructions Helper Overlay -->
+        <div class="text-center">
+            <div class="inline-block bg-slate-900/60 backdrop-blur-md rounded-full px-5 py-2 border border-white/5 shadow-md">
+                <p class="text-slate-300 font-semibold text-xs tracking-wider">
+                    Drag between states to launch invasion forces. Two-finger pinch to zoom.
                 </p>
             </div>
         </div>
     </div>
 
-    <div id="gameOverScreen" class="fixed inset-0 z-20 bg-slate-900/80 hidden flex-col items-center justify-center ui-layer backdrop-blur-md">
-        <div class="glass-panel p-8 md:p-12 rounded-3xl text-center border-t border-white/40 border-l shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-all duration-500 scale-95" id="goModal">
-            <h2 id="gameOverTitle" class="text-6xl font-black text-white mb-2 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)] uppercase">VICTORY</h2>
-            <p id="gameOverSub" class="text-lg md:text-xl text-slate-300 mb-8 font-semibold">Cambodia is unified!</p>
-            <button id="nextLevelBtn" class="interactive bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-500 hover:to-blue-300 text-white font-black py-4 px-12 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.4)] text-xl transition transform hover:scale-105 active:scale-95 uppercase tracking-wide">
-                Next Campaign
+    <!-- Victory/Defeat Screen -->
+    <div id="endGameScreen" class="fixed inset-0 z-20 bg-slate-950/80 hidden flex-col items-center justify-center ui-layer backdrop-blur-md">
+        <div class="glass-panel p-10 max-w-md w-full rounded-3xl text-center border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform transition-transform scale-95" id="endGameModal">
+            <h2 id="endGameTitle" class="text-5xl font-black mb-2 tracking-wider">VICTORY</h2>
+            <p id="endGameSub" class="text-slate-300 mb-8 font-semibold">Your faction unified Cambodia.</p>
+            <button id="backToMenuBtn" class="interactive bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-4 px-12 rounded-2xl shadow-lg transition transform active:scale-95 text-sm uppercase tracking-wide">
+                Return to Base
             </button>
         </div>
     </div>
@@ -107,20 +250,20 @@
     <script>
         // Generate PWA Manifest dynamically to allow standalone full-screen
         const manifestData = {
-            name: "Cambodia State Wars",
-            short_name: "CamWars",
+            name: "Cambodia State Wars Multiplayer",
+            short_name: "CamWarsMP",
             start_url: ".",
             display: "standalone",
-            background_color: "#0f172a",
-            theme_color: "#0f172a",
+            background_color: "#090d16",
+            theme_color: "#090d16",
             orientation: "landscape"
         };
         const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
         document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
 
-        // --- Core Variables ---
+        // Core Game Variables
         let canvas = document.getElementById('gameCanvas');
-        let ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency on base canvas
+        let ctx = canvas.getContext('2d', { alpha: false });
         let dpr = window.devicePixelRatio || 1;
         
         let width, height;
@@ -131,10 +274,10 @@
         let movingTroops = [];
         let delaunay, voronoi;
         
-        // --- Camera & Input State ---
+        // Dynamic Camera & Zoom Coordinates
         let camera = { x: 0, y: 0, zoom: 1 };
         let inputState = {
-            mode: 'none', // 'none', 'pan', 'zoom', 'attack'
+            mode: 'none',
             activeTouches: new Map(),
             lastPan: { x: 0, y: 0 },
             initialPinchDist: 0,
@@ -144,27 +287,75 @@
             dragCurrentWorldPos: null
         };
 
-        // --- Game Configuration ---
-        let level = 1;
-        let lastTime = 0;
-        let gameActive = true;
+        // Multiplayer System State
+        let roomCode = null;
+        let isHost = false;
+        let localPlayerId = null;
+        let localNickname = "Commander";
+        let localFaction = "player"; // player (Blue), ai1 (Red), ai2 (Green), ai3 (Yellow), ai4 (Purple)
+        let roomData = null;
+        let unsubscribeRoom = null;
+        let gameActive = false;
+        let spawnedAttackIds = new Set();
+        let lastSyncTime = 0;
         
+        // Web Audio Synthesizer (Premium Audio without external URL)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'spawn') {
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(450, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'conquer') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                }
+            } catch (e) {
+                console.warn("Audio Context blocked or failed.", e);
+            }
+        }
+
+        // Configuration
         const config = {
-            maxTroops: 150,
-            productionRate: 1200, 
-            troopSpeed: 180, 
-            troopSize: 6,
+            maxTroops: 120,
+            productionRate: 1500, // Sync loop intervals
+            troopSpeed: 190,
+            troopSize: 5.5,
             colors: {
-                neutral: { fill: ['#475569', '#334155'], stroke: '#64748b', text: '#f8fafc', shadow: '#1e293b' },
-                player:  { fill: ['#3b82f6', '#2563eb'], stroke: '#60a5fa', text: '#ffffff', shadow: '#1e3a8a', troop: '#93c5fd' },
-                ai1:     { fill: ['#ef4444', '#dc2626'], stroke: '#f87171', text: '#ffffff', shadow: '#7f1d1d', troop: '#fca5a5' },
-                ai2:     { fill: ['#10b981', '#059669'], stroke: '#34d399', text: '#ffffff', shadow: '#064e3b', troop: '#6ee7b7' },
-                ai3:     { fill: ['#f59e0b', '#d97706'], stroke: '#fbbf24', text: '#ffffff', shadow: '#78350f', troop: '#fcd34d' }
+                neutral: { fill: ['#334155', '#1e293b'], stroke: '#475569', text: '#f8fafc', shadow: '#0f172a', troop: '#64748b' },
+                player:  { fill: ['#2563eb', '#1e40af'], stroke: '#3b82f6', text: '#ffffff', shadow: '#172554', troop: '#93c5fd' }, // Blue
+                ai1:     { fill: ['#dc2626', '#991b1b'], stroke: '#ef4444', text: '#ffffff', shadow: '#450a0a', troop: '#fca5a5' }, // Red
+                ai2:     { fill: ['#16a34a', '#166534'], stroke: '#22c55e', text: '#ffffff', shadow: '#052e16', troop: '#86efac' }, // Green
+                ai3:     { fill: ['#d97706', '#92400e'], stroke: '#f59e0b', text: '#ffffff', shadow: '#451a03', troop: '#fde047' }, // Yellow
+                ai4:     { fill: ['#7c3aed', '#5b21b6'], stroke: '#8b5cf6', text: '#ffffff', shadow: '#2e1065', troop: '#c4b5fd' }  // Purple
             }
         };
-        const factions = ['neutral', 'player', 'ai1', 'ai2', 'ai3'];
 
-        // Relative coordinates (0 to 1) representing roughly the geography of Cambodia
+        const factions = ['neutral', 'player', 'ai1', 'ai2', 'ai3', 'ai4'];
+
+        // Layout representation of Cambodian Provinces
         const cambodiaLayout = [
             { id: 'OM', x: 0.40, y: 0.20 }, // Oddar Meanchey
             { id: 'PV', x: 0.55, y: 0.20 }, // Preah Vihear
@@ -193,34 +384,32 @@
             { id: 'MK', x: 0.85, y: 0.45 }  // Mondulkiri
         ];
 
-        function init() {
-            window.addEventListener('resize', resize);
-            resize();
-            
-            // Mouse Events
-            canvas.addEventListener('mousedown', handleInputStart);
-            window.addEventListener('mousemove', handleInputMove);
-            window.addEventListener('mouseup', handleInputEnd);
-            
-            // Touch Events (passive: false is vital to stop scrolling)
-            canvas.addEventListener('touchstart', handleInputStart, {passive: false});
-            canvas.addEventListener('touchmove', handleInputMove, {passive: false});
-            window.addEventListener('touchend', handleInputEnd);
-            window.addEventListener('touchcancel', handleInputEnd);
-            
-            // Wheel for zoom
-            canvas.addEventListener('wheel', handleWheel, {passive: false});
+        // Auth initialization and state tracking
+        window.addEventListener('firebaseReady', async () => {
+            const status = document.getElementById('connectionStatus');
+            try {
+                // RULE 3 - Custom auth token preferred, else fallback to anonymous
+                let cred;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    cred = await window.fbImports.signInWithCustomToken(window.auth, __initial_auth_token);
+                } else {
+                    cred = await window.fbImports.signInAnonymously(window.auth);
+                }
+                localPlayerId = cred.user.uid;
+                status.innerText = "System online. Secure connection established.";
+                status.className = "mt-6 text-xs font-semibold text-emerald-500";
+                
+                // Set initial random nickname to fill empty inputs
+                const randomId = Math.floor(1000 + Math.random() * 9000);
+                document.getElementById('nicknameInput').value = `General_${randomId}`;
+            } catch (err) {
+                console.error("Authentication Error: ", err);
+                status.innerText = "Connection failure. Reconnecting...";
+                status.className = "mt-6 text-xs font-semibold text-red-500";
+            }
+        });
 
-            // UI
-            document.getElementById('restartBtn').addEventListener('click', () => startLevel(level));
-            document.getElementById('nextLevelBtn').addEventListener('click', () => startLevel(level + 1));
-            document.getElementById('centerBtn').addEventListener('click', centerCamera);
-            
-            startLevel(level);
-            requestAnimationFrame(gameLoop);
-        }
-
-        function resize() {
+        function setupCanvas() {
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.style.width = width + 'px';
@@ -229,8 +418,16 @@
             canvas.height = height * dpr;
         }
 
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            if (regions.length > 0) centerCamera();
+        });
+
+        setupCanvas();
+
+        // Fit Map beautifully inside view bounds
         function centerCamera() {
-            // Find map boundaries
+            if (regions.length === 0) return;
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             regions.forEach(r => {
                 r.polygon.forEach(p => {
@@ -246,41 +443,52 @@
             let mapCX = minX + mapW/2;
             let mapCY = minY + mapH/2;
 
-            // Fit to screen with padding
             let zoomX = width / (mapW * 1.2);
             let zoomY = height / (mapH * 1.2);
-            camera.zoom = Math.max(0.3, Math.min(2.5, Math.min(zoomX, zoomY)));
+            camera.zoom = Math.max(0.3, Math.min(2.2, Math.min(zoomX, zoomY)));
             
             camera.x = (width / 2) - (mapCX * camera.zoom);
             camera.y = (height / 2) - (mapCY * camera.zoom);
         }
 
-        function generateMap(numEnemies) {
+        function screenToWorld(x, y) {
+            return {
+                x: (x - camera.x) / camera.zoom,
+                y: (y - camera.y) / camera.zoom
+            };
+        }
+
+        // Fast centroid & polygon hit checks
+        function getRegionAtScreen(x, y) {
+            const world = screenToWorld(x, y);
+            for (let r of regions) {
+                if (d3.polygonContains(r.polygon, [world.x, world.y])) {
+                    return r;
+                }
+            }
+            return null;
+        }
+
+        function buildMapSkeleton() {
             regions = [];
-            movingTroops = [];
             
-            // 1. Generate core province points
+            // Generate land province layout coordinates
             let landPoints = cambodiaLayout.map(p => {
-                // Add slight randomness so it's organic but stays in shape
-                let rx = (Math.random() - 0.5) * 0.03;
-                let ry = (Math.random() - 0.5) * 0.03;
                 return {
                     id: p.id,
-                    x: (p.x + rx) * worldWidth,
-                    y: (p.y + ry) * worldHeight,
+                    x: p.x * worldWidth,
+                    y: p.y * worldHeight,
                     isLand: true
                 };
             });
 
-            // 2. Generate "Water" points to define coastlines
+            // Formulate offshore boundary islands representing coast boundaries to clip ocean
             let waterPoints = [];
             let center = { x: 0.5 * worldWidth, y: 0.5 * worldHeight };
-            // Outer rings
-            for (let r = 0.6; r <= 1.2; r += 0.2) {
-                let numPts = Math.floor(r * 40);
+            for (let r = 0.63; r <= 1.25; r += 0.2) {
+                let numPts = Math.floor(r * 32);
                 for (let i = 0; i < numPts; i++) {
                     let angle = (i / numPts) * Math.PI * 2;
-                    // Make the water ring slightly elliptical
                     waterPoints.push({
                         id: `water_${r}_${i}`,
                         x: center.x + Math.cos(angle) * (worldWidth * r * 0.6),
@@ -293,11 +501,12 @@
             let allPoints = [...landPoints, ...waterPoints];
             let coords = allPoints.map(p => [p.x, p.y]);
 
-            // 3. Voronoi Computation
+            // Voronoi Mesh construction
             delaunay = d3.Delaunay.from(coords);
             voronoi = delaunay.voronoi([-worldWidth, -worldHeight, worldWidth*2, worldHeight*2]);
 
-            // 4. Extract Land Polygons
+            // Create beautiful clipped land shapes
+            let logicalIndex = 0;
             for (let i = 0; i < allPoints.length; i++) {
                 if (!allPoints[i].isLand) continue;
 
@@ -307,80 +516,28 @@
                 const centroid = d3.polygonCentroid(polygon);
                 const area = Math.abs(d3.polygonArea(polygon));
                 
-                // Shrink polygon slightly to create rivers/borders
+                // Slight organic contraction creates beautiful rivers and channel spaces
                 const shrinkFactor = 0.92;
                 const shrunkPolygon = polygon.map(p => [
                     centroid[0] + (p[0] - centroid[0]) * shrinkFactor,
                     centroid[1] + (p[1] - centroid[1]) * shrinkFactor
                 ]);
 
-                // Round capacity based on area
-                const capacity = Math.max(30, Math.min(config.maxTroops, Math.floor(area / 1200)));
+                const capacity = Math.max(30, Math.min(config.maxTroops, Math.floor(area / 1250)));
 
                 regions.push({
                     id: allPoints[i].id,
-                    index: regions.length, // logical array index
+                    index: logicalIndex++,
                     x: centroid[0],
                     y: centroid[1],
                     polygon: shrunkPolygon,
                     owner: 'neutral',
-                    troops: Math.floor(Math.random() * 15) + 10,
+                    troops: 20,
                     capacity: capacity,
                     dispatchQueue: [],
-                    lastProduction: performance.now(),
                     radius: Math.sqrt(area/Math.PI) * 0.7
                 });
             }
-
-            // 5. Assign Starting Factions intelligently
-            // Player usually gets Phnom Penh or Siem Reap (central-ish but safe)
-            let playerStarts = ['PP', 'SR', 'BT'];
-            let playerStartId = playerStarts[Math.floor(Math.random() * playerStarts.length)];
-            let playerReg = regions.find(r => r.id === playerStartId) || regions[0];
-            playerReg.owner = 'player';
-            playerReg.troops = 60;
-
-            // Enemies get far corners
-            let enemyStarts = ['RT', 'KK', 'OM', 'SV', 'KE']; 
-            enemyStarts.sort(() => 0.5 - Math.random()); // shuffle
-            
-            for(let i=0; i<numEnemies; i++) {
-                let aiReg = regions.find(r => r.id === enemyStarts[i]);
-                if(aiReg && aiReg.owner === 'neutral') {
-                    aiReg.owner = factions[i+2]; // ai1, ai2...
-                    aiReg.troops = 45 + (level * 8); // Scaling difficulty
-                }
-            }
-        }
-
-        function startLevel(lvl) {
-            level = lvl;
-            gameActive = true;
-            document.getElementById('levelDisplay').innerText = `Campaign ${level}`;
-            document.getElementById('gameOverScreen').classList.replace('flex', 'hidden');
-            document.getElementById('goModal').classList.replace('scale-100', 'scale-95');
-            
-            let enemies = Math.min(4, 1 + Math.floor(level / 3));
-            generateMap(enemies);
-            centerCamera();
-        }
-
-        function screenToWorld(x, y) {
-            return {
-                x: (x - camera.x) / camera.zoom,
-                y: (y - camera.y) / camera.zoom
-            };
-        }
-
-        function getRegionAtScreen(x, y) {
-            const world = screenToWorld(x, y);
-            // Simple check bounding box/polygon
-            for (let r of regions) {
-                if (d3.polygonContains(r.polygon, [world.x, world.y])) {
-                    return r;
-                }
-            }
-            return null;
         }
 
         function getPinchDist(t1, t2) {
@@ -392,8 +549,9 @@
 
         function handleInputStart(e) {
             if (!gameActive) return;
-            if (e.target !== canvas) return; // Ignore UI clicks
             
+            // Ignore events interacting directly with standard HUD/Modal elements
+            if (e.target.closest('.interactive')) return;
             e.preventDefault();
 
             if (e.touches) {
@@ -402,22 +560,23 @@
                 }
             }
 
-            // Determine interaction mode
             let touches = e.touches ? Array.from(e.touches) : [e];
             
             if (touches.length === 2) {
                 inputState.mode = 'zoom';
                 inputState.initialPinchDist = getPinchDist(touches[0], touches[1]);
                 inputState.initialZoom = camera.zoom;
-                inputState.selectedRegion = null; // Cancel attack
+                inputState.selectedRegion = null;
             } else if (touches.length === 1) {
                 let t = touches[0];
                 let clickedReg = getRegionAtScreen(t.clientX, t.clientY);
                 
-                if (clickedReg && clickedReg.owner === 'player') {
+                // Make sure player only attacks using their assigned faction!
+                if (clickedReg && clickedReg.owner === localFaction) {
                     inputState.mode = 'attack';
                     inputState.selectedRegion = clickedReg;
                     inputState.dragCurrentWorldPos = screenToWorld(t.clientX, t.clientY);
+                    playSound('click');
                 } else {
                     inputState.mode = 'pan';
                     inputState.lastPan = { x: t.clientX, y: t.clientY };
@@ -439,22 +598,18 @@
             if (inputState.mode === 'zoom' && touches.length === 2) {
                 let currentDist = getPinchDist(touches[0], touches[1]);
                 let center = getPinchCenter(touches[0], touches[1]);
-                
                 let scaleFactor = currentDist / inputState.initialPinchDist;
-                let newZoom = Math.max(0.3, Math.min(3, inputState.initialZoom * scaleFactor));
                 
-                // Zoom towards pinch center
+                let newZoom = Math.max(0.3, Math.min(2.5, inputState.initialZoom * scaleFactor));
                 let worldCenter = screenToWorld(center.x, center.y);
                 camera.zoom = newZoom;
                 camera.x = center.x - worldCenter.x * camera.zoom;
                 camera.y = center.y - worldCenter.y * camera.zoom;
-
             } else if (inputState.mode === 'pan' && touches.length === 1) {
                 let t = touches[0];
                 camera.x += (t.clientX - inputState.lastPan.x);
                 camera.y += (t.clientY - inputState.lastPan.y);
                 inputState.lastPan = { x: t.clientX, y: t.clientY };
-                
             } else if (inputState.mode === 'attack' && touches.length === 1) {
                 let t = touches[0];
                 inputState.dragCurrentWorldPos = screenToWorld(t.clientX, t.clientY);
@@ -464,7 +619,6 @@
 
         function handleInputEnd(e) {
             if (!gameActive) return;
-            
             if (e.changedTouches) {
                 for (let i=0; i<e.changedTouches.length; i++) {
                     inputState.activeTouches.delete(e.changedTouches[i].identifier);
@@ -475,70 +629,347 @@
             
             if (inputState.mode === 'attack') {
                 if (inputState.selectedRegion && inputState.dragTarget && inputState.selectedRegion.id !== inputState.dragTarget.id) {
-                    sendTroops(inputState.selectedRegion, inputState.dragTarget);
+                    executeAttack(inputState.selectedRegion, inputState.dragTarget);
                 }
             }
 
-            // Reset/transition mode
             if (remain === 0) {
                 inputState.mode = 'none';
                 inputState.selectedRegion = null;
                 inputState.dragTarget = null;
             } else if (remain === 1) {
-                // Stepped down from zoom to pan
                 inputState.mode = 'pan';
                 let t = Array.from(inputState.activeTouches.values())[0];
                 inputState.lastPan = { x: t.clientX, y: t.clientY };
             }
         }
 
-        function handleWheel(e) {
+        // Mouse Wheel compatibility
+        canvas.addEventListener('wheel', (e) => {
             if (!gameActive) return;
             e.preventDefault();
-            
             let zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-            let newZoom = Math.max(0.3, Math.min(3, camera.zoom * zoomFactor));
-            
+            let newZoom = Math.max(0.3, Math.min(2.5, camera.zoom * zoomFactor));
             let worldPos = screenToWorld(e.clientX, e.clientY);
             camera.zoom = newZoom;
             camera.x = e.clientX - worldPos.x * camera.zoom;
             camera.y = e.clientY - worldPos.y * camera.zoom;
+        }, {passive: false});
+
+        canvas.addEventListener('mousedown', handleInputStart);
+        window.addEventListener('mousemove', handleInputMove);
+        window.addEventListener('mouseup', handleInputEnd);
+        canvas.addEventListener('touchstart', handleInputStart, {passive: false});
+        canvas.addEventListener('touchmove', handleInputMove, {passive: false});
+        window.addEventListener('touchend', handleInputEnd);
+
+        // Setup Firestore Room Sync
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'state-wars-v1';
+
+        async function createRoom() {
+            if (!window.db || !localPlayerId) return;
+            playSound('click');
+            
+            const code = Math.floor(1000 + Math.random() * 9000).toString();
+            roomCode = code;
+            isHost = true;
+            localFaction = "player"; // Host gets first color (Blue)
+            
+            localNickname = document.getElementById('nicknameInput').value.trim() || "Host";
+
+            // Initialize 25 region setups
+            buildMapSkeleton();
+            const regionsData = regions.map(r => {
+                // Settle some base default owners
+                let owner = 'neutral';
+                let troops = Math.floor(Math.random() * 15) + 10;
+                if (r.id === 'PP') { owner = 'player'; troops = 65; }
+                else if (r.id === 'RT') { owner = 'ai1'; troops = 50; }
+                else if (r.id === 'OM') { owner = 'ai2'; troops = 50; }
+                else if (r.id === 'KK') { owner = 'ai3'; troops = 50; }
+                else if (r.id === 'SV') { owner = 'ai4'; troops = 50; }
+
+                return { id: r.id, owner, troops };
+            });
+
+            const initialRoom = {
+                state: 'waiting',
+                hostId: localPlayerId,
+                roomCode: code,
+                lastUpdated: Date.now(),
+                players: {
+                    [localPlayerId]: {
+                        name: localNickname,
+                        faction: 'player',
+                        active: true
+                    }
+                },
+                regions: regionsData,
+                attacks: [] // Synchronized visual attacks
+            };
+
+            // RULE 1: STRICT PATH COMPLIANCE
+            const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            await window.fbImports.setDoc(docRef, initialRoom);
+            
+            enterLobby(code);
         }
 
-        function sendTroops(source, target) {
-            const amount = Math.floor(source.troops / 2);
-            if (amount > 0) {
-                source.dispatchQueue.push({
-                    targetIndex: target.index,
-                    amountRemaining: amount,
-                    owner: source.owner
+        async function joinRoom() {
+            if (!window.db || !localPlayerId) return;
+            playSound('click');
+            
+            const code = document.getElementById('roomCodeInput').value.trim();
+            if (code.length !== 4) return;
+
+            localNickname = document.getElementById('nicknameInput').value.trim() || "Infiltrator";
+
+            const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            const docSnap = await window.fbImports.getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                alert("Campaign / Room code not found.");
+                return;
+            }
+
+            const rData = docSnap.data();
+            if (rData.state !== 'waiting') {
+                alert("Campaign battle already underway.");
+                return;
+            }
+
+            const pCount = Object.keys(rData.players).length;
+            if (pCount >= 5) {
+                alert("Campaign room is full.");
+                return;
+            }
+
+            // Allocate vacant faction
+            const allocatedFactions = Object.values(rData.players).map(p => p.faction);
+            let targetFaction = 'ai1';
+            for (let f of ['ai1', 'ai2', 'ai3', 'ai4']) {
+                if (!allocatedFactions.includes(f)) {
+                    targetFaction = f;
+                    break;
+                }
+            }
+            localFaction = targetFaction;
+            isHost = false;
+
+            const updateData = {};
+            updateData[`players.${localPlayerId}`] = {
+                name: localNickname,
+                faction: localFaction,
+                active: true
+            };
+            updateData.lastUpdated = Date.now();
+
+            await window.fbImports.updateDoc(docRef, updateData);
+            roomCode = code;
+            enterLobby(code);
+        }
+
+        function enterLobby(code) {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.replace('hidden', 'flex');
+            document.getElementById('roomCodeDisplay').innerText = code;
+            
+            if (isHost) {
+                document.getElementById('startGameBtn').classList.remove('hidden');
+                document.getElementById('waitStartMsg').classList.add('hidden');
+            } else {
+                document.getElementById('startGameBtn').classList.add('hidden');
+                document.getElementById('waitStartMsg').classList.remove('hidden');
+            }
+
+            // Realtime Room Hookup
+            const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            
+            unsubscribeRoom = window.fbImports.onSnapshot(docRef, (docSnap) => {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+                roomData = data;
+                
+                updateLobbyUI(data);
+
+                if (data.state === 'playing' && !gameActive) {
+                    launchCampaign(data);
+                }
+                
+                // Realtime synchronization of tactical swarms
+                if (gameActive && data.attacks) {
+                    syncIncomingAttacks(data.attacks);
+                }
+            }, (err) => {
+                console.error("Room sync disconnected: ", err);
+            });
+        }
+
+        function updateLobbyUI(data) {
+            const listContainer = document.getElementById('playerList');
+            listContainer.innerHTML = '';
+            
+            const factionNames = {
+                player: { label: "Blue Empire (Host)", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+                ai1: { label: "Red Vanguard", color: "text-red-400 bg-red-500/10 border-red-500/30" },
+                ai2: { label: "Green Legion", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" },
+                ai3: { label: "Yellow Alliance", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+                ai4: { label: "Purple Dynasty", color: "text-purple-400 bg-purple-500/10 border-purple-500/30" }
+            };
+
+            Object.entries(data.players).forEach(([pId, p]) => {
+                const spec = factionNames[p.faction];
+                const item = document.createElement('div');
+                item.className = `flex justify-between items-center p-3.5 rounded-2xl border ${spec.color} glass-panel`;
+                item.innerHTML = `
+                    <span class="font-bold text-white">${p.name} ${pId === localPlayerId ? '(You)' : ''}</span>
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full bg-black/40">${spec.label}</span>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        async function leaveLobby() {
+            playSound('click');
+            if (unsubscribeRoom) unsubscribeRoom();
+            
+            if (roomCode) {
+                const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+                if (isHost) {
+                    // Tear down game session
+                    await window.fbImports.updateDoc(docRef, { state: 'ended', lastUpdated: Date.now() });
+                } else {
+                    // Remove player entry
+                    const updateData = {};
+                    updateData[`players.${localPlayerId}`] = null;
+                    updateData.lastUpdated = Date.now();
+                    await window.fbImports.updateDoc(docRef, updateData);
+                }
+            }
+
+            document.getElementById('lobbyScreen').classList.replace('flex', 'hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            roomCode = null;
+            gameActive = false;
+        }
+
+        async function triggerStartGame() {
+            playSound('conquer');
+            if (!isHost || !roomCode) return;
+            const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+            await window.fbImports.updateDoc(docRef, {
+                state: 'playing',
+                lastUpdated: Date.now()
+            });
+        }
+
+        function launchCampaign(data) {
+            gameActive = true;
+            document.getElementById('lobbyScreen').classList.replace('flex', 'hidden');
+            document.getElementById('gameHUD').classList.remove('hidden');
+            
+            // HUD Customizations
+            document.getElementById('hudPlayerName').innerText = localNickname;
+            const factionMapColors = {
+                player: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
+                ai1: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]',
+                ai2: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
+                ai3: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
+                ai4: 'bg-purple-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+            };
+            document.getElementById('playerColorIndicator').className = `w-3.5 h-3.5 rounded-full ${factionMapColors[localFaction]}`;
+
+            // Initialize local coordinate space from skeleton build
+            buildMapSkeleton();
+            
+            // Reconcile region status
+            data.regions.forEach(syncR => {
+                let localR = regions.find(r => r.id === syncR.id);
+                if (localR) {
+                    localR.owner = syncR.owner;
+                    localR.troops = syncR.troops;
+                }
+            });
+
+            centerCamera();
+        }
+
+        function executeAttack(source, target) {
+            const sendQty = Math.floor(source.troops / 2);
+            if (sendQty <= 0) return;
+
+            // Instantly update local counts for snappy responsiveness
+            source.troops -= sendQty;
+            playSound('spawn');
+
+            // Formulate multiplayer command packet
+            const attackId = `${localPlayerId}_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+            const action = {
+                id: attackId,
+                from: source.id,
+                to: target.id,
+                qty: sendQty,
+                faction: localFaction,
+                time: Date.now()
+            };
+
+            // Local forecast spawn directly
+            spawnedAttackIds.add(attackId);
+            spawnTroopVisuals(source, target, sendQty, localFaction);
+
+            // Send action coordinates to the global strategic board
+            if (roomCode) {
+                const docRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+                const updatedAttacks = [...(roomData?.attacks || [])].slice(-25); // Limit active state array elements
+                updatedAttacks.push(action);
+                
+                // RULE 2 - Minimal payload structure updates
+                window.fbImports.updateDoc(docRef, {
+                    attacks: updatedAttacks,
+                    lastUpdated: Date.now()
                 });
             }
         }
 
+        // Parse visual commands from other participants
+        function syncIncomingAttacks(attacksList) {
+            attacksList.forEach(att => {
+                if (spawnedAttackIds.has(att.id)) return; // Ignored if spawned locally
+                spawnedAttackIds.add(att.id);
+
+                let source = regions.find(r => r.id === att.from);
+                let target = regions.find(r => r.id === att.to);
+                if (source && target) {
+                    // Update source simulation
+                    if (source.owner === att.faction) {
+                        source.troops = Math.max(0, source.troops - att.qty);
+                    }
+                    spawnTroopVisuals(source, target, att.qty, att.faction);
+                }
+            });
+        }
+
+        function spawnTroopVisuals(source, target, count, faction) {
+            const task = {
+                targetIndex: target.index,
+                amountRemaining: count,
+                owner: faction
+            };
+            source.dispatchQueue.push(task);
+        }
+
         function update(dt, time) {
-            if(!gameActive) return;
+            if (!gameActive) return;
             let dtSec = dt / 1000;
 
-            // 1. Production & Dispatch Queue
+            // 1. Dispatch & Visual Swarm Updates
             regions.forEach(r => {
-                // Produce
-                if (r.owner !== 'neutral') {
-                    if (time - r.lastProduction > config.productionRate) {
-                        if (r.troops < r.capacity) r.troops++;
-                        r.lastProduction = time;
-                    }
-                }
-
-                // Dispatch (Swarm logic)
                 if (r.dispatchQueue.length > 0) {
                     const task = r.dispatchQueue[0];
-                    // Dispatch multiple per frame if high framerate, but cap it to spread them out
-                    if (r.troops > 0 && task.amountRemaining > 0) {
-                        r.troops--;
+                    if (task.amountRemaining > 0) {
                         task.amountRemaining--;
                         
-                        // Spawn in a slight radius around center
+                        // Spawn visuals radiating organically from centroid
                         const angle = Math.random() * Math.PI * 2;
                         const dist = Math.random() * (r.radius * 0.4);
                         
@@ -547,15 +978,14 @@
                             y: r.y + Math.sin(angle) * dist,
                             targetIndex: task.targetIndex,
                             owner: task.owner,
-                            angle: 0 // Will update when moving
+                            angle: 0
                         });
                     }
-                    
                     if (task.amountRemaining <= 0) r.dispatchQueue.shift();
                 }
             });
 
-            // 2. Move Troops
+            // 2. Troop Physics and Pathfinding Update
             for (let i = movingTroops.length - 1; i >= 0; i--) {
                 let troop = movingTroops[i];
                 let targetReg = regions[troop.targetIndex];
@@ -564,14 +994,13 @@
                 let dy = targetReg.y - troop.y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
                 
-                troop.angle = Math.atan2(dy, dx); // Update rotation for rendering
+                troop.angle = Math.atan2(dy, dx);
 
-                // Flocking/Noise effect
-                let noiseX = Math.sin(time/200 + troop.x) * 30;
-                let noiseY = Math.cos(time/200 + troop.y) * 30;
+                // Organic flight pathing
+                let noiseX = Math.sin(time / 180 + troop.x) * 22;
+                let noiseY = Math.cos(time / 180 + troop.y) * 22;
 
                 if (dist < targetReg.radius * 0.7) {
-                    // Reached target
                     movingTroops.splice(i, 1);
                     
                     if (targetReg.owner === troop.owner) {
@@ -581,7 +1010,8 @@
                         if (targetReg.troops < 0) {
                             targetReg.owner = troop.owner;
                             targetReg.troops = 1;
-                            targetReg.dispatchQueue = []; // Cancel their attacks
+                            targetReg.dispatchQueue = [];
+                            playSound('conquer');
                         }
                     }
                 } else {
@@ -591,75 +1021,130 @@
                 }
             }
 
-            // 3. AI Logic
-            regions.forEach(r => {
-                if (r.owner !== 'neutral' && r.owner !== 'player') {
-                    // Chance to act scales with level
-                    if (Math.random() < (0.01 + level*0.002)) { 
-                        if (r.troops > r.capacity * 0.5 && r.dispatchQueue.length === 0) {
-                            let potential = regions.filter(t => t.id !== r.id);
-                            
-                            // Advanced AI: Prefers neutral neighbors, or weak player neighbors
-                            potential.sort((a, b) => {
-                                let distA = Math.hypot(a.x - r.x, a.y - r.y);
-                                let distB = Math.hypot(b.x - r.x, b.y - r.y);
-                                
-                                let scoreA = distA + (a.owner === r.owner ? 5000 : (a.owner === 'neutral' ? a.troops*5 : a.troops*15));
-                                let scoreB = distB + (b.owner === r.owner ? 5000 : (b.owner === 'neutral' ? b.troops*5 : b.troops*15));
-                                
-                                return scoreA - scoreB;
-                            });
+            // 3. AI Controller (Triggered only on the Host client for sync consistency)
+            if (isHost && roomData) {
+                // Determine vacant slots currently run as active local bots
+                const activePlayerFactions = Object.values(roomData.players).map(p => p.faction);
+                const botFactions = ['ai1', 'ai2', 'ai3', 'ai4'].filter(f => !activePlayerFactions.includes(f));
 
-                            if (potential.length > 0 && potential[0].owner !== r.owner) {
-                                sendTroops(r, potential[0]);
+                regions.forEach(r => {
+                    if (botFactions.includes(r.owner)) {
+                        if (Math.random() < 0.006) {
+                            if (r.troops > r.capacity * 0.55 && r.dispatchQueue.length === 0) {
+                                let targets = regions.filter(t => t.id !== r.id);
+                                targets.sort((a, b) => {
+                                    let distA = Math.hypot(a.x - r.x, a.y - r.y);
+                                    let distB = Math.hypot(b.x - r.x, b.y - r.y);
+                                    let scoreA = distA + (a.owner === r.owner ? 6000 : (a.owner === 'neutral' ? a.troops * 4 : a.troops * 12));
+                                    let scoreB = distB + (b.owner === r.owner ? 6000 : (b.owner === 'neutral' ? b.troops * 4 : b.troops * 12));
+                                    return scoreA - scoreB;
+                                });
+
+                                if (targets.length > 0 && targets[0].owner !== r.owner) {
+                                    // Host triggers attack sequence and broadcasts to state database
+                                    executeAttack(r, targets[0]);
+                                }
                             }
                         }
                     }
+                });
+            }
+
+            // 4. Strategic Synchronization / Host Verification Authority Loop
+            if (time - lastSyncTime > config.productionRate) {
+                lastSyncTime = time;
+                if (isHost && roomCode) {
+                    // Update state variables (production increment, etc.)
+                    regions.forEach(r => {
+                        if (r.owner !== 'neutral' && r.troops < r.capacity) {
+                            r.troops++;
+                        }
+                    });
+
+                    // Push absolute coordinates / states up to Firestore to sync clients
+                    const rDataRef = window.fbImports.doc(window.db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+                    const syncRegions = regions.map(r => ({ id: r.id, owner: r.owner, troops: r.troops }));
+                    window.fbImports.updateDoc(rDataRef, {
+                        regions: syncRegions,
+                        lastUpdated: Date.now()
+                    });
+                } else if (roomData && roomData.regions) {
+                    // Client Interpolator
+                    roomData.regions.forEach(syncR => {
+                        let localR = regions.find(r => r.id === syncR.id);
+                        if (localR) {
+                            // Reconcile and snap states to target values if difference gets high
+                            if (Math.abs(localR.troops - syncR.troops) > 6 || localR.owner !== syncR.owner) {
+                                localR.owner = syncR.owner;
+                                localR.troops = syncR.troops;
+                            } else {
+                                // Smooth recovery interpolate
+                                localR.troops = Math.round(localR.troops * 0.8 + syncR.troops * 0.2);
+                            }
+                        }
+                    });
                 }
+                
+                // Keep HUD Bars Synchronized
+                recalculateHUDMetrics();
+            }
+
+            checkWinLoseStatus();
+        }
+
+        function recalculateHUDMetrics() {
+            let totals = { player: 0, ai1: 0, ai2: 0, ai3: 0, ai4: 0, neutral: 0 };
+            regions.forEach(r => {
+                if (totals[r.owner] !== undefined) totals[r.owner]++;
+            });
+            
+            const totalCount = regions.length || 1;
+            document.getElementById('bar-player').style.width = `${(totals.player / totalCount) * 100}%`;
+            document.getElementById('bar-ai1').style.width = `${(totals.ai1 / totalCount) * 100}%`;
+            document.getElementById('bar-ai2').style.width = `${(totals.ai2 / totalCount) * 100}%`;
+            document.getElementById('bar-ai3').style.width = `${(totals.ai3 / totalCount) * 100}%`;
+            document.getElementById('bar-ai4').style.width = `${(totals.ai4 / totalCount) * 100}%`;
+            document.getElementById('bar-neutral').style.width = `${(totals.neutral / totalCount) * 100}%`;
+        }
+
+        function checkWinLoseStatus() {
+            let activeFactions = new Set();
+            regions.forEach(r => {
+                if (r.owner !== 'neutral') activeFactions.add(r.owner);
+            });
+            movingTroops.forEach(t => {
+                activeFactions.add(t.owner);
             });
 
-            checkWin();
+            if (activeFactions.size > 0) {
+                if (!activeFactions.has(localFaction)) {
+                    triggerCampaignEnd(false);
+                } else if (activeFactions.size === 1 && activeFactions.has(localFaction)) {
+                    triggerCampaignEnd(true);
+                }
+            }
         }
 
-        function checkWin() {
-            let pCount = 0, eCount = 0;
-            for (let r of regions) {
-                if (r.owner === 'player') pCount++;
-                else if (r.owner !== 'neutral') eCount++;
-            }
-            for (let t of movingTroops) {
-                if (t.owner === 'player') pCount++;
-                else if (t.owner !== 'neutral') eCount++;
-            }
-
-            if (eCount === 0 && pCount > 0) endGame(true);
-            else if (pCount === 0 && eCount > 0) endGame(false);
-        }
-
-        function endGame(won) {
+        function triggerCampaignEnd(victory) {
             gameActive = false;
-            const scr = document.getElementById('gameOverScreen');
-            const mod = document.getElementById('goModal');
-            const tit = document.getElementById('gameOverTitle');
-            const sub = document.getElementById('gameOverSub');
-            const btn = document.getElementById('nextLevelBtn');
+            document.getElementById('gameHUD').classList.add('hidden');
+            
+            const screen = document.getElementById('endGameScreen');
+            const modal = document.getElementById('endGameModal');
+            const title = document.getElementById('endGameTitle');
+            const sub = document.getElementById('endGameSub');
 
-            scr.classList.replace('hidden', 'flex');
-            // Small timeout to allow display:flex to apply before animating transform
-            setTimeout(() => mod.classList.replace('scale-95', 'scale-100'), 10);
+            screen.classList.replace('hidden', 'flex');
+            setTimeout(() => modal.classList.replace('scale-95', 'scale-100'), 50);
 
-            if (won) {
-                tit.innerText = "VICTORY";
-                tit.className = "text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-300 to-emerald-600 mb-2 drop-shadow-lg uppercase";
-                sub.innerText = "Cambodia is unified under your banner.";
-                btn.innerText = "Next Campaign";
-                btn.onclick = () => startLevel(level + 1);
+            if (victory) {
+                title.innerText = "VICTORY";
+                title.className = "text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-300 to-emerald-500 mb-2 tracking-wider";
+                sub.innerText = "You successfully unified the provinces of Cambodia.";
             } else {
-                tit.innerText = "DEFEAT";
-                tit.className = "text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-red-400 to-red-700 mb-2 drop-shadow-lg uppercase";
-                sub.innerText = "Your empire has fallen.";
-                btn.innerText = "Retry Level";
-                btn.onclick = () => startLevel(level);
+                title.innerText = "DEFEAT";
+                title.className = "text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-red-400 to-rose-600 mb-2 tracking-wider";
+                sub.innerText = "Your strategic forces were out-maneuvered.";
             }
         }
 
@@ -673,78 +1158,74 @@
         }
 
         function draw() {
-            // Clear background
-            ctx.fillStyle = '#0f172a';
+            // Background Clearing
+            ctx.fillStyle = '#090d16';
             ctx.fillRect(0, 0, width*dpr, height*dpr);
 
             ctx.save();
-            // Apply High-DPI Scaling
             ctx.scale(dpr, dpr);
-            // Apply Camera Transform
+            
+            // Apply Dynamic Camera Transformations
             ctx.translate(camera.x, camera.y);
             ctx.scale(camera.zoom, camera.zoom);
 
-            // 1. Draw Regions
+            // 1. Draw Land Provinces (Voronoi Polygons)
             regions.forEach(r => {
                 const colors = config.colors[r.owner];
                 drawPolygon(r.polygon);
                 
-                // Create rich gradient fill
+                // Fluid Linear Gradients representing terrain depth
                 let minY = Math.min(...r.polygon.map(p=>p[1]));
                 let maxY = Math.max(...r.polygon.map(p=>p[1]));
                 let grad = ctx.createLinearGradient(0, minY, 0, maxY);
                 grad.addColorStop(0, colors.fill[0]);
                 grad.addColorStop(1, colors.fill[1]);
                 
-                // Outer Shadow for depth
+                // Territory Outer Shadows
                 ctx.shadowColor = 'rgba(0,0,0,0.4)';
-                ctx.shadowBlur = 15;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 5;
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetY = 4;
                 
                 ctx.fillStyle = grad;
                 ctx.fill();
                 
-                // Reset shadow for stroke
-                ctx.shadowColor = 'transparent';
+                ctx.shadowColor = 'transparent'; // Reset
                 
-                // Selection Highlight
+                // Dynamic border highlighting for selection cues
                 if (r === inputState.selectedRegion) {
-                    ctx.lineWidth = 6;
+                    ctx.lineWidth = 5;
                     ctx.strokeStyle = '#ffffff';
                     ctx.stroke();
                 } else if (r === inputState.dragTarget) {
                     ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#fde047'; // Yellow highlight
+                    ctx.strokeStyle = '#fde047';
                     ctx.setLineDash([8, 8]);
                     ctx.stroke();
                     ctx.setLineDash([]);
                 } else {
-                    // Inner "bevel" feel via stroke
-                    ctx.lineWidth = 3;
+                    ctx.lineWidth = 2.5;
                     ctx.strokeStyle = colors.stroke;
                     ctx.stroke();
                 }
             });
 
-            // 2. Draw Troop Texts
+            // 2. Draw Troop Values & Rounded Containers
             regions.forEach(r => {
                 const colors = config.colors[r.owner];
                 
-                // Background bubble for text
                 ctx.fillStyle = colors.shadow;
                 ctx.beginPath();
-                ctx.roundRect(r.x - 22, r.y - 14, 44, 28, 14); // modern rounded rect
+                ctx.roundRect(r.x - 22, r.y - 14, 44, 28, 14);
                 ctx.fill();
 
                 ctx.fillStyle = colors.text;
-                ctx.font = 'bold 18px "Poppins", sans-serif';
+                ctx.font = 'bold 16px "Poppins", sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(r.troops, r.x, r.y + 1); // +1 visual center adjust
+                ctx.fillText(r.troops, r.x, r.y + 1);
             });
 
-            // 3. Draw Moving Troops (as stylized Arrows/Jets)
+            // 3. Draw Troop Units (Custom Jet Visualizers)
             movingTroops.forEach(t => {
                 const colors = config.colors[t.owner];
                 const size = config.troopSize;
@@ -753,51 +1234,50 @@
                 ctx.translate(t.x, t.y);
                 ctx.rotate(t.angle);
                 
-                // Draw Arrow shape
                 ctx.beginPath();
-                ctx.moveTo(size * 2, 0);       // Nose
-                ctx.lineTo(-size, size);       // Right wing
-                ctx.lineTo(-size/2, 0);        // Tail indent
-                ctx.lineTo(-size, -size);      // Left wing
+                ctx.moveTo(size * 1.8, 0);       // Nose
+                ctx.lineTo(-size, size);         // Right wing
+                ctx.lineTo(-size/2, 0);          // Tail
+                ctx.lineTo(-size, -size);        // Left wing
                 ctx.closePath();
 
-                // Glow effect
+                // Custom unit neon trails
                 ctx.shadowColor = colors.troop;
-                ctx.shadowBlur = 8;
+                ctx.shadowBlur = 6;
 
-                ctx.fillStyle = colors.text; // White center
+                ctx.fillStyle = '#ffffff';
                 ctx.fill();
                 
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.8;
                 ctx.strokeStyle = colors.fill[0];
                 ctx.stroke();
 
                 ctx.restore();
             });
 
-            // 4. Draw Interaction Line (Attack Arrow)
+            // 4. Draw Command Line Path indicators
             if (inputState.mode === 'attack' && inputState.selectedRegion && inputState.dragCurrentWorldPos) {
                 const start = inputState.selectedRegion;
                 const end = inputState.dragCurrentWorldPos;
                 
                 ctx.beginPath();
                 ctx.moveTo(start.x, start.y);
-                // Curve the line slightly for aesthetics
+                
                 let midX = (start.x + end.x)/2;
-                let midY = (start.y + end.y)/2 - 50; 
+                let midY = (start.y + end.y)/2 - 40; 
                 ctx.quadraticCurveTo(midX, midY, end.x, end.y);
                 
-                ctx.lineWidth = 6;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
                 ctx.lineCap = 'round';
-                ctx.setLineDash([12, 12]);
+                ctx.setLineDash([12, 10]);
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Draw Target Reticle at end
+                // Target Lock Visualizer
                 ctx.beginPath();
-                ctx.arc(end.x, end.y, 10, 0, Math.PI*2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.arc(end.x, end.y, 8, 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.fill();
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = '#fff';
@@ -807,10 +1287,11 @@
             ctx.restore();
         }
 
+        let lastTime = 0;
         function gameLoop(time) {
             let dt = time - lastTime;
             lastTime = time;
-            if (dt > 100) dt = 100; // Cap large jumps
+            if (dt > 100) dt = 100;
             
             update(dt, time);
             draw();
@@ -818,8 +1299,51 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Boot
-        window.onload = init;
+        // --- Strategic Event Setup ---
+        document.getElementById('hostBtn').addEventListener('click', createRoom);
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            playSound('click');
+            document.getElementById('joinSection').classList.toggle('hidden');
+        });
+        document.getElementById('confirmJoinBtn').addEventListener('click', joinRoom);
+        document.getElementById('leaveLobbyBtn').addEventListener('click', leaveLobby);
+        document.getElementById('startGameBtn').addEventListener('click', triggerStartGame);
+        
+        document.getElementById('recenterCameraBtn').addEventListener('click', () => {
+            playSound('click');
+            centerCamera();
+        });
+        document.getElementById('leaveGameBtn').addEventListener('click', () => {
+            playSound('click');
+            if (confirm("Disconnect and abandon this tactical combat?")) {
+                leaveLobby();
+                document.getElementById('gameHUD').classList.add('hidden');
+            }
+        });
+        document.getElementById('backToMenuBtn').addEventListener('click', () => {
+            playSound('click');
+            document.getElementById('endGameScreen').classList.replace('flex', 'hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            leaveLobby();
+        });
+
+        // Copy Room Code Helper
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+            if (roomCode) {
+                document.execCommand('copy');
+                // Temporary visual notification
+                const origText = document.getElementById('roomCodeDisplay').innerText;
+                document.getElementById('roomCodeDisplay').innerText = "COPIED!";
+                setTimeout(() => {
+                    document.getElementById('roomCodeDisplay').innerText = origText;
+                }, 1000);
+            }
+        });
+
+        // Start animation loop once loaded
+        window.onload = function() {
+            requestAnimationFrame(gameLoop);
+        };
     </script>
 </body>
 </html>
