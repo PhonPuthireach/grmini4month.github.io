@@ -77,6 +77,78 @@
         .toast { background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 100px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px); animation: slideDown 0.3s forwards, fadeOut 0.3s forwards 2.7s; }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+
+
+        /* Premium reveal UX */
+        @keyframes zoomIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+        @keyframes shimmer { 0% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+        .reveal-title-card {
+            background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.86));
+            border: 1px solid rgba(255,255,255,.14);
+            box-shadow: 0 18px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+        .secret-panel {
+            min-height: 290px;
+            background: linear-gradient(160deg, rgba(15,23,42,.82), rgba(2,6,23,.72));
+            border: 1px solid rgba(148,163,184,.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.42);
+        }
+        .secret-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+            transform: translateX(-120%);
+            animation: shimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .hold-btn {
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 12px 35px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+        .done-btn {
+            box-shadow: 0 16px 35px rgba(6,182,212,.18);
+        }
+        .safe-hint {
+            background: rgba(15,23,42,.62);
+            border: 1px solid rgba(148,163,184,.18);
+            border-radius: 999px;
+            padding: .55rem .9rem;
+        }
+        .role-badge {
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.12);
+            background: rgba(2,6,23,.45);
+            padding: .35rem .75rem;
+        }
+
+
+        /* Waiting / discussion screen */
+        @keyframes softPulse { 0%,100% { transform: scale(1); opacity: .78; } 50% { transform: scale(1.06); opacity: 1; } }
+        @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .waiting-orb {
+            width: 7.5rem;
+            height: 7.5rem;
+            border-radius: 999px;
+            background: radial-gradient(circle at 35% 30%, rgba(34,211,238,.75), rgba(14,165,233,.18) 45%, rgba(15,23,42,.08) 70%);
+            border: 1px solid rgba(34,211,238,.28);
+            box-shadow: 0 0 55px rgba(34,211,238,.25), inset 0 0 35px rgba(255,255,255,.08);
+            animation: softPulse 2.4s ease-in-out infinite;
+        }
+        .waiting-ring {
+            position: absolute;
+            inset: -14px;
+            border-radius: 999px;
+            border: 2px dashed rgba(34,211,238,.22);
+            animation: spinSlow 13s linear infinite;
+        }
+        .waiting-card {
+            background: linear-gradient(160deg, rgba(15,23,42,.88), rgba(2,6,23,.72));
+            border: 1px solid rgba(148,163,184,.16);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 25px 75px rgba(0,0,0,.42);
+        }
+
     </style>
 </head>
 <body>
@@ -176,43 +248,48 @@
 
         <!-- === VIEW: OFFLINE REVEAL === -->
         <div id="view-offline-reveal" class="view justify-center items-center text-center">
-            <p class="text-cyan-200 font-bold uppercase tracking-widest mb-2">ហុចទូរស័ព្ទទៅកាន់៖</p>
-            <h2 id="off-reveal-name" class="text-5xl font-black text-white mb-8 bg-slate-800 px-6 py-3 rounded-2xl border border-slate-600">ឈ្មោះ</h2>
+            <p id="off-reveal-progress" class="safe-hint text-cyan-200 font-bold uppercase tracking-widest mb-4 text-sm">អ្នកលេង 1/1</p>
+            <p class="text-cyan-200/80 font-bold uppercase tracking-widest mb-2">ហុចទូរស័ព្ទទៅកាន់៖</p>
+            <h2 id="off-reveal-name" class="reveal-title-card text-5xl font-black text-white mb-6 px-7 py-4 rounded-[1.75rem] w-full truncate">ឈ្មោះ</h2>
 
-            <div class="glass-card w-full min-h-[250px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
-                <div id="off-reveal-hidden" class="flex flex-col items-center w-full">
-                    <i class="fa-solid fa-eye-slash text-5xl text-slate-500 mb-4"></i>
-                    <p class="text-xl text-slate-300 font-bold">ចុចសង្កត់ដើម្បីមើល</p>
+            <div class="glass-card secret-panel w-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
+                <div id="off-reveal-hidden" class="flex flex-col items-center w-full relative z-10">
+                    <i class="fa-solid fa-lock text-5xl text-slate-500 mb-4"></i>
+                    <p class="text-2xl text-slate-200 font-black">សម្ងាត់</p>
+                    <p class="text-sm text-slate-400 font-bold mt-2">សង្កត់ប៊ូតុងខាងក្រោមដើម្បីមើល — ប្រលែងដៃដើម្បីលាក់</p>
                 </div>
-                <div id="off-reveal-shown" class="hidden flex-col items-center w-full animate-[zoomIn_0.2s_forwards]">
+                <div id="off-reveal-shown" class="hidden flex-col items-center w-full relative z-10 animate-[zoomIn_0.2s_forwards]">
                     <!-- Injected Content -->
                 </div>
             </div>
 
-            <button id="btn-off-hold" class="w-full mt-6 bg-slate-800 py-5 rounded-2xl font-bold text-xl border border-slate-600 transition-all uppercase tracking-widest text-cyan-300 active:bg-cyan-900">
-                សង្កត់ទីនេះ
+            <button id="btn-off-hold" class="hold-btn w-full mt-6 bg-gradient-to-r from-slate-800 to-slate-900 py-5 rounded-2xl font-black text-xl border border-cyan-500/30 transition-all uppercase tracking-widest text-cyan-200 active:scale-[0.98]">
+                <i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើលពាក្យ
             </button>
-            <button id="btn-off-next" onclick="app.offline.nextPlayer()" class="hidden w-full mt-4 bg-cyan-600 hover:bg-cyan-500 py-4 rounded-2xl font-bold text-lg transition-all uppercase">
+            <button id="btn-off-next" onclick="app.offline.nextPlayer()" class="hidden done-btn w-full mt-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 py-4 rounded-2xl font-black text-lg transition-all uppercase border-b-4 border-cyan-900 active:border-b-0 active:translate-y-1">
                 រួចរាល់ ហុចបន្ត
             </button>
         </div>
 
         <!-- === VIEW: OFFLINE DISCUSSION === -->
-        <div id="view-offline-discuss" class="view justify-center">
-            <div class="text-center mb-6">
-                <i class="fa-solid fa-comments text-4xl text-cyan-400 mb-2"></i>
-                <h2 class="text-3xl font-black text-white">ចាប់ផ្តើមសួរដេញដោល</h2>
-                <p class="text-slate-400 text-sm mt-2">អ្នកបន្លំត្រូវព្យាយាមទាយពាក្យចេញពីបញ្ជីនេះ</p>
-            </div>
-
-            <div class="glass-card mb-6">
-                <h3 class="font-bold text-cyan-300 mb-3 border-b border-white/10 pb-2" id="off-discuss-cat-name">ប្រធានបទ</h3>
-                <div id="off-discuss-word-list" class="flex flex-wrap gap-2">
-                    <!-- Words injected here -->
+        <div id="view-offline-discuss" class="view justify-center items-center text-center">
+            <div class="glass-card waiting-card w-full py-10 mb-6 relative overflow-hidden">
+                <div class="relative mx-auto mb-8 w-[7.5rem] h-[7.5rem] flex items-center justify-center">
+                    <div class="waiting-ring"></div>
+                    <div class="waiting-orb flex items-center justify-center">
+                        <i class="fa-solid fa-comments text-4xl text-cyan-100 drop-shadow-[0_0_18px_rgba(34,211,238,.8)]"></i>
+                    </div>
                 </div>
+                <p class="safe-hint inline-block text-cyan-200 text-xs font-black uppercase tracking-[0.22em] mb-4">Discussion Time</p>
+                <h2 class="text-3xl font-black text-white mb-3">ចាប់ផ្តើមសួរដេញដោល</h2>
+                <p class="text-slate-400 text-sm leading-7 max-w-xs mx-auto">
+                    កំពុងរង់ចាំការពិភាក្សា។ ទំព័រនេះមិនបង្ហាញពាក្យ ឬបញ្ជីពាក្យទេ ដើម្បីរក្សាការសម្ងាត់។
+                </p>
+                <div id="off-discuss-cat-name" class="hidden"></div>
+                <div id="off-discuss-word-list" class="hidden"></div>
             </div>
 
-            <button onclick="app.nav('view-offline-result')" class="w-full bg-rose-600 hover:bg-rose-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-800 active:border-b-0 active:translate-y-1 transition-all uppercase mt-auto">
+            <button onclick="app.nav('view-offline-result')" class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-900 active:border-b-0 active:translate-y-1 transition-all uppercase mt-auto">
                 បង្ហាញអ្នកបន្លំ
             </button>
         </div>
@@ -295,48 +372,52 @@
 
         <!-- === VIEW: ONLINE REVEAL === -->
         <div id="view-online-reveal" class="view justify-center items-center text-center">
-            <p class="text-slate-400 font-bold uppercase tracking-widest mb-2">តួនាទីសម្ងាត់របស់អ្នក៖</p>
-            <h2 id="on-my-name-display" class="text-3xl font-bold text-white mb-8">ឈ្មោះអ្នក</h2>
+            <p class="safe-hint text-emerald-200 font-bold uppercase tracking-widest mb-4 text-sm">តួនាទីសម្ងាត់របស់អ្នក</p>
+            <h2 id="on-my-name-display" class="reveal-title-card text-4xl font-black text-white mb-6 px-7 py-4 rounded-[1.75rem] w-full truncate">ឈ្មោះអ្នក</h2>
 
-            <div class="glass-card w-full min-h-[300px] flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
-                <div id="on-reveal-hidden" class="flex flex-col items-center w-full">
-                    <i class="fa-solid fa-fingerprint text-6xl text-emerald-500/50 mb-4 animate-pulse"></i>
-                    <p class="text-xl text-slate-300 font-bold">ចុចសង្កត់ដើម្បីមើល</p>
+            <div class="glass-card secret-panel w-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
+                <div id="on-reveal-hidden" class="flex flex-col items-center w-full relative z-10">
+                    <i class="fa-solid fa-fingerprint text-6xl text-emerald-500/60 mb-4 animate-pulse"></i>
+                    <p class="text-2xl text-slate-200 font-black">Private Role</p>
+                    <p class="text-sm text-slate-400 font-bold mt-2">សង្កត់ដើម្បីមើល — អាចសង្កត់មើលបានច្រើនដង</p>
                 </div>
-                <div id="on-reveal-shown" class="hidden flex-col items-center w-full animate-[zoomIn_0.2s_forwards]">
+                <div id="on-reveal-shown" class="hidden flex-col items-center w-full relative z-10 animate-[zoomIn_0.2s_forwards]">
                     <!-- Injected Content -->
                 </div>
             </div>
 
-            <button id="btn-on-hold" class="w-full mt-6 bg-slate-800 py-5 rounded-2xl font-bold text-xl border border-slate-600 transition-all uppercase tracking-widest text-emerald-300 active:bg-emerald-900">
-                សង្កត់ទីនេះ
+            <button id="btn-on-hold" class="hold-btn w-full mt-6 bg-gradient-to-r from-slate-800 to-slate-900 py-5 rounded-2xl font-black text-xl border border-emerald-500/30 transition-all uppercase tracking-widest text-emerald-200 active:scale-[0.98]">
+                <i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើល
             </button>
             
-            <div id="on-host-next-controls" class="hidden w-full mt-8 pt-6 border-t border-white/10">
-                <button onclick="app.online.advanceToDiscuss()" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold text-lg transition-all uppercase">
-                    អ្នកគ្រប់គ្នាមើលរួចរាល់ (បន្ត)
+            <div id="on-host-next-controls" class="hidden w-full mt-6 pt-5 border-t border-white/10">
+                <button onclick="app.online.advanceToDiscuss()" class="done-btn w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 py-4 rounded-2xl font-black text-lg transition-all uppercase border-b-4 border-cyan-900 active:border-b-0 active:translate-y-1">
+                    អ្នកគ្រប់គ្នារួចរាល់ — បន្ត
                 </button>
             </div>
-            <p id="on-client-reveal-wait" class="hidden text-slate-500 text-sm mt-4 font-bold animate-pulse">រង់ចាំអ្នកដទៃមើល...</p>
+            <p id="on-client-reveal-wait" class="hidden safe-hint text-slate-400 text-sm mt-5 font-bold animate-pulse">មេបន្ទប់នឹងចុចបន្តពេលគ្រប់គ្នារួចរាល់</p>
         </div>
 
         <!-- === VIEW: ONLINE DISCUSS === -->
-        <div id="view-online-discuss" class="view justify-center">
-            <div class="text-center mb-6">
-                <i class="fa-solid fa-tower-broadcast text-4xl text-emerald-400 mb-2 animate-pulse"></i>
-                <h2 class="text-3xl font-black text-white">Live Discussion</h2>
-                <p class="text-slate-400 text-sm mt-2">ជជែកគ្នារកអ្នកបន្លំ</p>
-            </div>
-
-            <div class="glass-card mb-6 flex-1 overflow-y-auto custom-scrollbar">
-                <h3 class="font-bold text-emerald-300 mb-3 border-b border-white/10 pb-2" id="on-discuss-cat-name">ប្រធានបទ</h3>
-                <div id="on-discuss-word-list" class="flex flex-wrap gap-2">
-                    <!-- Words injected here -->
+        <div id="view-online-discuss" class="view justify-center items-center text-center">
+            <div class="glass-card waiting-card w-full py-10 mb-6 relative overflow-hidden">
+                <div class="relative mx-auto mb-8 w-[7.5rem] h-[7.5rem] flex items-center justify-center">
+                    <div class="waiting-ring"></div>
+                    <div class="waiting-orb flex items-center justify-center">
+                        <i class="fa-solid fa-tower-broadcast text-4xl text-emerald-100 drop-shadow-[0_0_18px_rgba(16,185,129,.8)]"></i>
+                    </div>
                 </div>
+                <p class="safe-hint inline-block text-emerald-200 text-xs font-black uppercase tracking-[0.22em] mb-4">Live Waiting</p>
+                <h2 class="text-3xl font-black text-white mb-3">កំពុងរង់ចាំការពិភាក្សា</h2>
+                <p class="text-slate-400 text-sm leading-7 max-w-xs mx-auto">
+                    គ្រប់គ្នាអាចជជែកគ្នារកអ្នកបន្លំ។ ទំព័រនេះមិនបង្ហាញពាក្យ ឬបញ្ជីពាក្យទេ។
+                </p>
+                <div id="on-discuss-cat-name" class="hidden"></div>
+                <div id="on-discuss-word-list" class="hidden"></div>
             </div>
 
             <div id="on-host-res-controls" class="hidden w-full mt-auto">
-                <button onclick="app.online.advanceToResult()" class="w-full bg-rose-600 hover:bg-rose-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-800 active:border-b-0 active:translate-y-1 transition-all uppercase">
+                <button onclick="app.online.advanceToResult()" class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 py-5 rounded-2xl font-black text-xl border-b-4 border-rose-900 active:border-b-0 active:translate-y-1 transition-all uppercase">
                     បង្ហាញអ្នកបន្លំ
                 </button>
             </div>
@@ -432,6 +513,34 @@
             setTimeout(() => el.remove(), 3000);
         };
 
+        const HOLD_IDLE_CYAN = "hold-btn w-full mt-6 bg-gradient-to-r from-slate-800 to-slate-900 py-5 rounded-2xl font-black text-xl border border-cyan-500/30 transition-all uppercase tracking-widest text-cyan-200 active:scale-[0.98]";
+        const HOLD_ACTIVE_CYAN = "hold-btn w-full mt-6 bg-gradient-to-r from-cyan-700 to-blue-700 py-5 rounded-2xl font-black text-xl border border-cyan-300 transition-all uppercase tracking-widest text-white scale-[0.99] shadow-[0_0_35px_rgba(6,182,212,.35)]";
+        const HOLD_IDLE_EMERALD = "hold-btn w-full mt-6 bg-gradient-to-r from-slate-800 to-slate-900 py-5 rounded-2xl font-black text-xl border border-emerald-500/30 transition-all uppercase tracking-widest text-emerald-200 active:scale-[0.98]";
+        const HOLD_ACTIVE_EMERALD = "hold-btn w-full mt-6 bg-gradient-to-r from-emerald-700 to-teal-700 py-5 rounded-2xl font-black text-xl border border-emerald-300 transition-all uppercase tracking-widest text-white scale-[0.99] shadow-[0_0_35px_rgba(16,185,129,.35)]";
+
+        const bindHoldReveal = (button, showFn, hideFn) => {
+            let isHolding = false;
+            button.addEventListener('contextmenu', (e) => e.preventDefault());
+            button.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                isHolding = true;
+                try { button.setPointerCapture(e.pointerId); } catch (_) {}
+                showFn(e);
+            });
+            const finishHold = (e) => {
+                if(!isHolding) return;
+                e.preventDefault();
+                isHolding = false;
+                hideFn(e);
+            };
+            button.addEventListener('pointerup', finishHold);
+            button.addEventListener('pointercancel', finishHold);
+            button.addEventListener('lostpointercapture', finishHold);
+            button.addEventListener('pointerleave', (e) => {
+                if(e.pointerType === 'mouse') finishHold(e);
+            });
+        };
+
         const getAllCategories = () => {
             // Merge defaults with custom DB categories
             let merged = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
@@ -461,21 +570,9 @@
                     if(state.isHost && state.roomCode) app.online.renderLobbyControls();
                 });
 
-                // Setup Offline Hold Events
-                const btnOffHold = $('btn-off-hold');
-                btnOffHold.addEventListener('touchstart', app.offline.showReveal, {passive: false});
-                btnOffHold.addEventListener('touchend', app.offline.hideReveal);
-                btnOffHold.addEventListener('mousedown', app.offline.showReveal);
-                btnOffHold.addEventListener('mouseup', app.offline.hideReveal);
-                btnOffHold.addEventListener('mouseleave', app.offline.hideReveal);
-
-                // Setup Online Hold Events
-                const btnOnHold = $('btn-on-hold');
-                btnOnHold.addEventListener('touchstart', app.online.showReveal, {passive: false});
-                btnOnHold.addEventListener('touchend', app.online.hideReveal);
-                btnOnHold.addEventListener('mousedown', app.online.showReveal);
-                btnOnHold.addEventListener('mouseup', app.online.hideReveal);
-                btnOnHold.addEventListener('mouseleave', app.online.hideReveal);
+                // Unlimited hold/reveal events (Pointer Events prevents double touch+mouse firing)
+                bindHoldReveal($('btn-off-hold'), app.offline.showReveal, app.offline.hideReveal);
+                bindHoldReveal($('btn-on-hold'), app.online.showReveal, app.online.hideReveal);
 
                 // Setup Form
                 $('off-add-player-form').addEventListener('submit', app.offline.addPlayer);
@@ -608,23 +705,30 @@
                 },
                 setupRevealScreen: () => {
                     $('off-reveal-name').innerText = state.offPlayers[state.offRevealIndex];
+                    $('off-reveal-progress').innerText = `អ្នកលេង ${state.offRevealIndex + 1}/${state.offPlayers.length}`;
                     $('off-reveal-hidden').style.display = 'flex';
                     $('off-reveal-shown').style.display = 'none';
                     $('btn-off-hold').style.display = 'block';
-                    $('btn-off-next').style.display = 'none';
+                    $('btn-off-hold').className = HOLD_IDLE_CYAN;
+                    $('btn-off-hold').innerHTML = '<i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើលពាក្យ';
+                    $('btn-off-next').style.display = 'block';
+                    $('btn-off-next').classList.remove('hidden');
+                    $('btn-off-next').innerText = state.offRevealIndex === state.offPlayers.length - 1 ? "ចាប់ផ្តើមការសន្ទនា" : "រួចរាល់ ហុចបន្ត";
 
                     const shownDiv = $('off-reveal-shown');
                     if(state.offRevealIndex === state.offGameData.imposterIndex) {
                         shownDiv.innerHTML = `
-                            <i class="fa-solid fa-triangle-exclamation text-[5rem] text-rose-500 mb-4 drop-shadow-[0_0_20px_rgba(225,29,72,0.8)]"></i>
-                            <h3 class="text-3xl font-black text-rose-400">អ្នកគឺជា អ្នកបន្លំ!</h3>
-                            <p class="text-rose-200/70 text-sm mt-2">ព្យាយាមស្ដាប់គេ និងទាយពាក្យ</p>
+                            <span class="role-badge text-rose-200 text-xs font-black uppercase tracking-widest mb-4">Secret Role</span>
+                            <i class="fa-solid fa-triangle-exclamation text-[5.5rem] text-rose-500 mb-4 drop-shadow-[0_0_25px_rgba(225,29,72,0.9)] animate-pulse"></i>
+                            <h3 class="text-4xl font-black text-rose-400">អ្នកគឺជា អ្នកបន្លំ!</h3>
+                            <p class="text-rose-200/80 text-sm mt-3 font-bold">ព្យាយាមស្ដាប់គេ និងទាយពាក្យ</p>
                         `;
                     } else {
                         shownDiv.innerHTML = `
-                            <p class="text-emerald-200 font-bold text-sm mb-2 uppercase tracking-widest">${state.offGameData.categoryName}</p>
-                            <div class="bg-emerald-950/50 border-2 border-emerald-500/50 rounded-2xl py-6 px-10">
-                                <h3 class="text-4xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">${state.offGameData.word}</h3>
+                            <span class="role-badge text-emerald-200 text-xs font-black uppercase tracking-widest mb-4">${state.offGameData.categoryName}</span>
+                            <div class="bg-emerald-950/60 border-2 border-emerald-400/60 rounded-[2rem] py-7 px-10 shadow-[0_0_40px_rgba(16,185,129,0.25)] w-full">
+                                <p class="text-emerald-100/70 text-xs font-black uppercase tracking-[0.35em] mb-2">ពាក្យរបស់អ្នក</p>
+                                <h3 class="text-5xl font-black text-emerald-300 drop-shadow-[0_0_18px_rgba(16,185,129,0.9)] break-words">${state.offGameData.word}</h3>
                             </div>
                         `;
                     }
@@ -633,8 +737,8 @@
                     if(e) e.preventDefault();
                     $('off-reveal-hidden').style.display = 'none';
                     $('off-reveal-shown').style.display = 'flex';
-                    $('btn-off-hold').innerText = "ប្រលែងដៃដើម្បីលាក់";
-                    $('btn-off-hold').className = "w-full mt-6 bg-slate-900 py-5 rounded-2xl font-bold text-xl border border-cyan-500 transition-all uppercase tracking-widest text-cyan-100";
+                    $('btn-off-hold').innerHTML = '<i class="fa-solid fa-eye mr-2"></i> កំពុងបង្ហាញ — ប្រលែងដើម្បីលាក់';
+                    $('btn-off-hold').className = HOLD_ACTIVE_CYAN;
                     if(navigator.vibrate) navigator.vibrate(30);
                 },
                 hideReveal: (e) => {
@@ -642,11 +746,8 @@
                     if($('off-reveal-hidden').style.display === 'none') {
                         $('off-reveal-hidden').style.display = 'flex';
                         $('off-reveal-shown').style.display = 'none';
-                        $('btn-off-hold').style.display = 'none';
-                        $('btn-off-next').style.display = 'block';
-                        if(state.offRevealIndex === state.offPlayers.length - 1) {
-                            $('btn-off-next').innerText = "ចាប់ផ្តើមការសន្ទនា";
-                        }
+                        $('btn-off-hold').innerHTML = '<i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើលម្តងទៀត';
+                        $('btn-off-hold').className = HOLD_IDLE_CYAN;
                     }
                 },
                 nextPlayer: () => {
@@ -658,12 +759,9 @@
                     }
                 },
                 startDiscussion: () => {
-                    $('off-discuss-cat-name').innerText = state.offGameData.categoryName;
-                    const wList = $('off-discuss-word-list');
-                    wList.innerHTML = '';
-                    state.offGameData.allWords.forEach(w => {
-                        wList.innerHTML += `<span class="bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-200">${w}</span>`;
-                    });
+                    // Keep the discussion/waiting page private: no category, word, or word list is shown here.
+                    $('off-discuss-cat-name').innerText = '';
+                    $('off-discuss-word-list').innerHTML = '';
                     app.nav('view-offline-discuss');
                 }
             },
@@ -816,14 +914,15 @@
                     $('on-reveal-hidden').style.display = 'flex';
                     $('on-reveal-shown').style.display = 'none';
                     $('btn-on-hold').style.display = 'block';
-                    $('btn-on-hold').innerText = "សង្កត់ទីនេះ";
+                    $('btn-on-hold').className = HOLD_IDLE_EMERALD;
+                    $('btn-on-hold').innerHTML = '<i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើល';
                     
                     if(state.isHost) {
-                        $('on-host-next-controls').classList.add('hidden');
+                        $('on-host-next-controls').classList.remove('hidden');
                         $('on-client-reveal-wait').classList.add('hidden');
                     } else {
                         $('on-host-next-controls').classList.add('hidden');
-                        $('on-client-reveal-wait').classList.add('hidden');
+                        $('on-client-reveal-wait').classList.remove('hidden');
                     }
 
                     const game = state.roomData.game;
@@ -831,14 +930,17 @@
                     
                     if(state.myUid === game.imposterUid) {
                         shownDiv.innerHTML = `
-                            <i class="fa-solid fa-triangle-exclamation text-6xl text-rose-500 mb-4 drop-shadow-[0_0_20px_rgba(225,29,72,0.8)] animate-pulse"></i>
+                            <span class="role-badge text-rose-200 text-xs font-black uppercase tracking-widest mb-4">Secret Role</span>
+                            <i class="fa-solid fa-triangle-exclamation text-[5.5rem] text-rose-500 mb-4 drop-shadow-[0_0_25px_rgba(225,29,72,0.9)] animate-pulse"></i>
                             <h3 class="text-4xl font-black text-rose-400">អ្នកគឺជា អ្នកបន្លំ!</h3>
+                            <p class="text-rose-200/80 text-sm mt-3 font-bold">ស្ដាប់គេ ហើយកុំអោយគេចាប់បាន</p>
                         `;
                     } else {
                         shownDiv.innerHTML = `
-                            <p class="text-emerald-200 font-bold text-sm mb-2 uppercase tracking-widest">${game.categoryName}</p>
-                            <div class="bg-emerald-950/50 border-2 border-emerald-500/50 rounded-2xl py-6 px-10 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                                <h3 class="text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">${game.word}</h3>
+                            <span class="role-badge text-emerald-200 text-xs font-black uppercase tracking-widest mb-4">${game.categoryName}</span>
+                            <div class="bg-emerald-950/60 border-2 border-emerald-400/60 rounded-[2rem] py-7 px-10 shadow-[0_0_40px_rgba(16,185,129,0.25)] w-full">
+                                <p class="text-emerald-100/70 text-xs font-black uppercase tracking-[0.35em] mb-2">ពាក្យរបស់អ្នក</p>
+                                <h3 class="text-5xl font-black text-emerald-300 drop-shadow-[0_0_18px_rgba(16,185,129,0.9)] break-words">${game.word}</h3>
                             </div>
                         `;
                     }
@@ -847,8 +949,8 @@
                     if(e) e.preventDefault();
                     $('on-reveal-hidden').style.display = 'none';
                     $('on-reveal-shown').style.display = 'flex';
-                    $('btn-on-hold').innerText = "ប្រលែងដៃដើម្បីលាក់";
-                    $('btn-on-hold').className = "w-full mt-6 bg-slate-900 py-5 rounded-2xl font-bold text-xl border border-emerald-500 transition-all uppercase tracking-widest text-emerald-100";
+                    $('btn-on-hold').innerHTML = '<i class="fa-solid fa-eye mr-2"></i> កំពុងបង្ហាញ — ប្រលែងដើម្បីលាក់';
+                    $('btn-on-hold').className = HOLD_ACTIVE_EMERALD;
                     if(navigator.vibrate) navigator.vibrate(30);
                 },
                 hideReveal: (e) => {
@@ -856,11 +958,8 @@
                     if($('on-reveal-hidden').style.display === 'none') {
                         $('on-reveal-hidden').style.display = 'flex';
                         $('on-reveal-shown').style.display = 'none';
-                        $('btn-on-hold').style.display = 'none';
-                        
-                        // Show next buttons
-                        if(state.isHost) $('on-host-next-controls').classList.remove('hidden');
-                        else $('on-client-reveal-wait').classList.remove('hidden');
+                        $('btn-on-hold').innerHTML = '<i class="fa-solid fa-hand-pointer mr-2"></i> សង្កត់មើលម្តងទៀត';
+                        $('btn-on-hold').className = HOLD_IDLE_EMERALD;
                     }
                 },
                 advanceToDiscuss: () => {
@@ -868,13 +967,9 @@
                 },
                 setupDiscuss: () => {
                     app.nav('view-online-discuss');
-                    const game = state.roomData.game;
-                    $('on-discuss-cat-name').innerText = game.categoryName;
-                    const wList = $('on-discuss-word-list');
-                    wList.innerHTML = '';
-                    game.allWords.forEach(w => {
-                        wList.innerHTML += `<span class="bg-slate-800 border border-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-200">${w}</span>`;
-                    });
+                    // Keep the online discussion/waiting page private: no category, word, or word list is shown here.
+                    $('on-discuss-cat-name').innerText = '';
+                    $('on-discuss-word-list').innerHTML = '';
 
                     if(state.isHost) $('on-host-res-controls').classList.remove('hidden');
                     else $('on-host-res-controls').classList.add('hidden');
